@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@capacitor/screen-orientation": "^8.0.1",
+    "capacitor-plugin-safe-area": "^5.0.1",
+    "socket.io-client": "^4.8.3"
+  }
+}
