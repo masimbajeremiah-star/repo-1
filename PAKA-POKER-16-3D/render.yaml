@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: paka-poker-api
+    runtime: node
+    rootDir: PAKA-POKER-16-3D/server
+    buildCommand: npm ci
+    preDeployCommand: npm run migrate
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_TOKEN_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: paka-poker-db
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        sync: false
+databases:
+  - name: paka-poker-db
+    databaseName: paka_poker
+    user: paka_poker

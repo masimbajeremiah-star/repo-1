@@ -1,0 +1,26 @@
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+android/.gradle/
+android/local.properties
+android/app/build/
+ios/App/Pods/
+ios/App/DerivedData/
+*.backup.*
+*.bak
+*.bak.*
+*.before-*
+*.tsbuildinfo
+.backup-*/
+# Obsolete nested server copy; production uses ./server.
+card-game-server/

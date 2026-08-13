@@ -1,7 +1,49 @@
 {
+  "name": "paka-poker-16-3d",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "client:dev": "npm --prefix client run dev",
+    "server:dev": "npm --prefix server run dev",
+    "dev:all": "npm run server:dev & npm run client:dev",
+    "client:build": "npm --prefix client run build",
+    "server:start": "npm --prefix server run start",
+    "install:all": "npm install --prefix client && npm install --prefix server"
+  },
   "dependencies": {
-    "@capacitor/screen-orientation": "^8.0.1",
-    "capacitor-plugin-safe-area": "^5.0.1",
-    "socket.io-client": "^4.8.3"
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/network": "^7.0.0",
+    "@capacitor/screen-orientation": "^7.0.0",
+    "@react-spring/core": "^10.1.2",
+    "@react-spring/three": "^10.1.2",
+    "@react-spring/web": "^10.1.2",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "@react-three/postprocessing": "^3.0.0",
+    "framer-motion": "^12.0.0",
+    "leva": "^0.10.0",
+    "postprocessing": "^6.36.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0",
+    "socket.io-client": "^4.8.3",
+    "three": "^0.178.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.178.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.8.0",
+    "vite": "^7.0.0"
   }
 }

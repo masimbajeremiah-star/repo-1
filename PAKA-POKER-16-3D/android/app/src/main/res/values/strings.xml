@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PAKA Poker 16 3D</string>
+    <string name="title_activity_main">PAKA Poker 16 3D</string>
+    <string name="package_name">com.pakapoker.game16</string>
+    <string name="custom_url_scheme">com.pakapoker.game16</string>
+</resources>
