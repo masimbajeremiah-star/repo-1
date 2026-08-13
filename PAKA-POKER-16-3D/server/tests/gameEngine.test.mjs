@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addPlayer, canPlayCard, createGameState, drawCard, getNextPlayer, markKadiCalled, playCard, selectSuit } from '../src/services/gameEngine.js';
+import { addPlayer, canPlayCard, checkForWinner, createGameState, drawCard, getNextPlayer, markKadiCalled, playCard, resetGame, selectSuit, startRound } from '../src/services/gameEngine.js';
 
 const card = (id, rank, suit = 'Hearts') => ({ id, rank, suit, value: Number(rank) || 1, effect: 0, image: '', playable: true });
 function stateWithHands(first, second = [card(90, '4')], pile = card(99, '8')) {
@@ -87,4 +87,42 @@ test('draw penalty stacks and Ace cancels before suit choice', () => {
   playCard(state, 'p2', 3); assert.equal(state.pendingDraw, 5);
   state.players[0].hand.push(card(5, 'A')); getNextPlayer(state); playCard(state, 'p1', 5);
   assert.equal(state.pendingDraw, 0); assert.equal(state.suitSelectionPlayerId, 'p1');
+});
+
+test('ordinary cards require a matching suit or rank', () => {
+  const state = stateWithHands([card(1, '6', 'Hearts'), card(2, '9', 'Clubs')], [card(3, '4')], card(99, '9', 'Hearts'));
+  assert.equal(canPlayCard(state, state.players[0].hand[0]), true);
+  assert.equal(canPlayCard(state, state.players[0].hand[1]), true);
+  assert.equal(canPlayCard(state, card(4, '7', 'Spades')), false);
+});
+
+test('Joker is playable and applies the configured five-card penalty', () => {
+  const state = stateWithHands([card(1, 'JOKER', 'Joker'), card(2, '4')], [card(3, '6')], card(99, '9', 'Hearts'));
+  assert.ok(playCard(state, 'p1', 1));
+  assert.equal(state.pendingDraw, 5);
+});
+
+test('winner is detected only after an accepted KADI final-card play', () => {
+  const state = stateWithHands([card(1, '6')], [card(3, '4')], card(99, '6'));
+  assert.equal(markKadiCalled(state, 'p1'), true);
+  assert.ok(playCard(state, 'p1', 1));
+  checkForWinner(state);
+  assert.equal(state.winnerId, 'p1');
+  assert.equal(state.gameOver, true);
+});
+
+test('Play Again resets transient state and deals a clean four-card round', () => {
+  const state = stateWithHands([card(1, '6')], [card(3, '4')], card(99, '6'));
+  state.gameOver = true;
+  state.winnerId = 'p1';
+  state.pendingDraw = 3;
+  state.questionState = { initiatedBy: 'p1', lastQuestionBy: 'p1', chainLength: 1, answerRanks: ['6'] };
+  resetGame(state);
+  assert.equal(startRound(state), true);
+  assert.equal(state.gameOver, false);
+  assert.equal(state.winnerId, null);
+  assert.equal(state.pendingDraw, 0);
+  assert.equal(state.questionState, null);
+  assert.deepEqual(state.players.map((player) => player.hand.length), [4, 4]);
+  assert.equal(state.deck.length, 45);
 });

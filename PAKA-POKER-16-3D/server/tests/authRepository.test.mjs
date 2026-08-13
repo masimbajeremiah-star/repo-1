@@ -23,6 +23,15 @@ test('email passwords are hashed and bad passwords are rejected', async () => {
   await repository.close();
 });
 
+test('expired and invalid authentication tokens are rejected', async () => {
+  const repository = await createRepository({ databaseUrl: '', requireDatabase: false });
+  const expiredAuth = createAuthService({ repository, secret: 'test-secret-at-least-24-characters', ttlSeconds: -1 });
+  const issued = await expiredAuth.createGuest('Expired Guest');
+  assert.equal(expiredAuth.verifyToken(issued.token), null);
+  assert.equal(expiredAuth.verifyToken('invalid.redacted'), null);
+  await repository.close();
+});
+
 test('wallet settlement is server-calculated and idempotent', async () => {
   const repository = await createRepository({ databaseUrl: '', requireDatabase: false });
   await repository.createUser({ id: 'one', displayName: 'One', authType: 'guest' });
