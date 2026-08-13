@@ -1,0 +1,58 @@
+name: iOS Xcode 16 validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - ios-xcode16-ci
+    paths:
+      - 'PAKA-POKER-16-3D/client/**'
+      - 'PAKA-POKER-16-3D/server/**'
+      - 'PAKA-POKER-16-3D/ios/**'
+      - 'PAKA-POKER-16-3D/package.json'
+      - 'PAKA-POKER-16-3D/package-lock.json'
+      - 'PAKA-POKER-16-3D/capacitor.config.ts'
+      - 'PAKA-POKER-16-3D/scripts/build-ios-ci.sh'
+      - '.github/workflows/ios-xcode16.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  simulator-build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: PAKA-POKER-16-3D
+    env:
+      VITE_SOCKET_URL: https://paka-poker-api.onrender.com
+      VITE_ADMIN_VIEW: 'false'
+      VITE_SHOW_DEBUG_CONTROLS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            PAKA-POKER-16-3D/package-lock.json
+            PAKA-POKER-16-3D/client/package-lock.json
+            PAKA-POKER-16-3D/server/package-lock.json
+      - name: Select Xcode 16
+        run: |
+          xcode_path="$(find /Applications -maxdepth 1 -type d -name 'Xcode_16*.app' | sort | tail -1)"
+          if [[ -z "$xcode_path" ]]; then
+            echo 'Xcode 16 was not found on this runner.' >&2
+            exit 1
+          fi
+          sudo xcode-select -s "$xcode_path/Contents/Developer"
+          xcodebuild -version
+      - name: Build and validate unsigned iOS simulator app
+        run: ./scripts/build-ios-ci.sh
+      - name: Upload simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: PAKA-Poker-iOS-Simulator
+          path: ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Debug-iphonesimulator/*.app
+          if-no-files-found: error
+          retention-days: 7
