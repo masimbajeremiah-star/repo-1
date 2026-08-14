@@ -1,6 +1,6 @@
-CREATE TABLE IF NOT EXISTS mpesa_transactions (
+CREATE TABLE IF NOT EXISTS public.mpesa_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   merchant_request_id TEXT,
   checkout_request_id TEXT NOT NULL UNIQUE,
   amount BIGINT NOT NULL CHECK (amount > 0),
@@ -14,5 +14,4 @@ CREATE TABLE IF NOT EXISTS mpesa_transactions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS mpesa_transactions_user_id_idx ON mpesa_transactions(user_id);
-
+CREATE INDEX IF NOT EXISTS mpesa_transactions_user_id_idx ON public.mpesa_transactions(user_id);

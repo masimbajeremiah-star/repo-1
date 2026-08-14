@@ -20,7 +20,15 @@ app.use(cors({ origin: allowedOrigins }));
 
 // Allow your server to read JSON bodies in requests
 app.use(express.json({ limit: '32kb' }));
-app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/health', async (_req, res) => {
+  try {
+    const database = await repository.schemaStatus();
+    if (!database.mpesaTransactions) return res.status(503).json({ status: 'error', database });
+    return res.json({ status: 'ok', database });
+  } catch {
+    return res.status(503).json({ status: 'error', database: { schema: 'unavailable', mpesaTransactions: false } });
+  }
+});
 app.use('/api/auth', createAuthRouter(authService));
 app.use('/api/mpesa', createMpesaRouter({ authService, mpesaService }));
 
