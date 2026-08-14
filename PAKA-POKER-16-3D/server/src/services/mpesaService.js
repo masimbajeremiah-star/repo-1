@@ -22,6 +22,23 @@ function metadataItems(callback) {
   return Object.fromEntries(items.filter((item) => item && typeof item.Name === 'string').map((item) => [item.Name, item.Value]));
 }
 
+function safeDarajaText(value) {
+  return value == null ? null : String(value).replace(/[\r\n\t]/g, ' ').slice(0, 300);
+}
+
+function darajaDetails(operation, response, body = {}) {
+  return {
+    operation,
+    httpStatus: Number(response?.status) || null,
+    errorCode: safeDarajaText(body.errorCode || body.ResponseCode),
+    errorMessage: safeDarajaText(body.errorMessage || body.ResponseDescription || body.CustomerMessage),
+  };
+}
+
+function logDarajaFailure(details) {
+  console.error('M-PESA Daraja request failed', details);
+}
+
 export function parseStkCallback(payload) {
   const callback = payload?.Body?.stkCallback;
   if (!callback || typeof callback !== 'object') return null;
@@ -56,12 +73,24 @@ export function createMpesaService({ config, repository, fetchImpl = fetch }) {
   async function accessToken() {
     assertConfigured();
     const authorization = Buffer.from(`${mpesa.consumerKey}:${mpesa.consumerSecret}`).toString('base64');
-    const response = await fetchImpl(`${DARAJA_BASE_URLS[mpesa.environment]}/oauth/v1/generate?grant_type=client_credentials`, {
-      headers: { authorization: `Basic ${authorization}` },
-    });
-    if (!response.ok) throw new Error(`Daraja OAuth failed with status ${response.status}`);
-    const body = await response.json();
-    if (!body.access_token) throw new Error('Daraja OAuth response did not include an access token');
+    let response;
+    try {
+      response = await fetchImpl(`${DARAJA_BASE_URLS[mpesa.environment]}/oauth/v1/generate?grant_type=client_credentials`, {
+        headers: { authorization: `Basic ${authorization}` },
+      });
+    } catch {
+      logDarajaFailure({ operation: 'oauth', httpStatus: null, errorCode: 'NETWORK_ERROR', errorMessage: 'Daraja OAuth network request failed' });
+      throw new Error('Daraja OAuth request failed');
+    }
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      logDarajaFailure(darajaDetails('oauth', response, body));
+      throw new Error('Daraja OAuth request failed');
+    }
+    if (!body.access_token) {
+      logDarajaFailure({ operation: 'oauth', httpStatus: response.status, errorCode: 'MISSING_ACCESS_TOKEN', errorMessage: 'Daraja OAuth response did not include an access token' });
+      throw new Error('Daraja OAuth response was invalid');
+    }
     return body.access_token;
   }
 
@@ -79,25 +108,34 @@ export function createMpesaService({ config, repository, fetchImpl = fetch }) {
       const requestTimestamp = timestamp();
       const password = Buffer.from(`${mpesa.shortCode}${mpesa.passkey}${requestTimestamp}`).toString('base64');
       const token = await accessToken();
-      const response = await fetchImpl(`${DARAJA_BASE_URLS[mpesa.environment]}/mpesa/stkpush/v1/processrequest`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          BusinessShortCode: mpesa.shortCode,
-          Password: password,
-          Timestamp: requestTimestamp,
-          TransactionType: 'CustomerPayBillOnline',
-          Amount: numericAmount,
-          PartyA: phone,
-          PartyB: mpesa.shortCode,
-          PhoneNumber: phone,
-          CallBackURL: mpesa.callbackUrl,
-          AccountReference: `PAKA-${String(userId).slice(0, 18)}`,
-          TransactionDesc: 'PAKA Poker wallet top-up',
-        }),
-      });
+      let response;
+      try {
+        response = await fetchImpl(`${DARAJA_BASE_URLS[mpesa.environment]}/mpesa/stkpush/v1/processrequest`, {
+          method: 'POST',
+          headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+          body: JSON.stringify({
+            BusinessShortCode: mpesa.shortCode,
+            Password: password,
+            Timestamp: requestTimestamp,
+            TransactionType: 'CustomerPayBillOnline',
+            Amount: numericAmount,
+            PartyA: phone,
+            PartyB: mpesa.shortCode,
+            PhoneNumber: phone,
+            CallBackURL: mpesa.callbackUrl,
+            AccountReference: `PAKA-${String(userId).slice(0, 18)}`,
+            TransactionDesc: 'PAKA Poker wallet top-up',
+          }),
+        });
+      } catch {
+        logDarajaFailure({ operation: 'stk', httpStatus: null, errorCode: 'NETWORK_ERROR', errorMessage: 'Daraja STK network request failed' });
+        throw new Error('Daraja STK request failed');
+      }
       const body = await response.json().catch(() => ({}));
-      if (!response.ok || !body.CheckoutRequestID) throw new Error(String(body.CustomerMessage || body.errorMessage || `Daraja STK Push failed with status ${response.status}`));
+      if (!response.ok || !body.CheckoutRequestID) {
+        logDarajaFailure(darajaDetails('stk', response, body));
+        throw new Error('Daraja STK request failed');
+      }
       await repository.createMpesaTransaction({
         userId,
         merchantRequestId: body.MerchantRequestID,
