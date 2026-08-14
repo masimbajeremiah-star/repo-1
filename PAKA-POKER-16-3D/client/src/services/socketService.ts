@@ -41,6 +41,51 @@ export function registerEmail(displayName: string, email: string, password: stri
 export function loginEmail(email: string, password: string) { return authenticate('login', { email, password }); }
 export function clearIdentity() { localStorage.removeItem(IDENTITY_KEY); disconnectSocket(); }
 
+export type MpesaStkResponse = {
+  merchantRequestId: string;
+  checkoutRequestId: string;
+  responseCode?: string;
+  customerMessage?: string;
+};
+
+export type MpesaTransactionStatus = {
+  checkoutRequestId: string;
+  merchantRequestId?: string;
+  amount: number;
+  status: 'pending' | 'succeeded' | 'failed';
+  resultCode?: number | null;
+  resultDescription?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export async function requestMpesaDeposit(phoneNumber: string, amount: number): Promise<MpesaStkResponse> {
+  const identity = getTestIdentity();
+  if (!identity?.token) throw new Error('Please sign in before making an optional deposit');
+  const response = await fetch(`${serverUrl()}/api/mpesa/stkpush`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${identity.token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ phoneNumber, amount }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || 'M-PESA request could not be started');
+  return payload as MpesaStkResponse;
+}
+
+export async function getMpesaDepositStatus(checkoutRequestId: string): Promise<MpesaTransactionStatus> {
+  const identity = getTestIdentity();
+  if (!identity?.token) throw new Error('Authentication required');
+  const response = await fetch(`${serverUrl()}/api/mpesa/status/${encodeURIComponent(checkoutRequestId)}`, {
+    headers: { authorization: `Bearer ${identity.token}` },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || 'Payment status is unavailable');
+  return payload.transaction as MpesaTransactionStatus;
+}
+
 export function refreshStoredWallet(chipBalance: number) {
   const identity = getTestIdentity();
   if (identity && Number.isFinite(chipBalance)) localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, chipBalance }));

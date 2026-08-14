@@ -111,6 +111,19 @@ test('winner is detected only after an accepted KADI final-card play', () => {
   assert.equal(state.gameOver, true);
 });
 
+test('zero virtual chips do not restrict drawing, playing, or KADI', () => {
+  const state = stateWithHands([card(1, '6'), card(2, '7')], [card(3, '4')], card(99, '6'));
+  state.players[0].chips = 0;
+  assert.ok(playCard(state, 'p1', 1));
+  getNextPlayer(state);
+  assert.ok(drawCard(state, 'p2'));
+  state.players[0].hand = [card(4, '7')];
+  state.questionState = null;
+  state.pendingDraw = 0;
+  state.suitSelectionPlayerId = null;
+  assert.equal(markKadiCalled(state, 'p1'), true);
+});
+
 test('Play Again resets transient state and deals a clean four-card round', () => {
   const state = stateWithHands([card(1, '6')], [card(3, '4')], card(99, '6'));
   state.gameOver = true;

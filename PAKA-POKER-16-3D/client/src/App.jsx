@@ -24,7 +24,7 @@ export default function App() {
         }}>
           <img src="/assets/icons/logo.svg" alt="PAKA Poker 16" />
           <h1>PAKA Poker 16 3D</h1>
-          <p>Game-chip accounts only. No real-money payments.</p>
+          <p>Play freely as a guest or account holder. Optional M-PESA deposits never restrict gameplay.</p>
           <div className="auth-tabs">{['guest','login','register'].map((item) => <button className={mode === item ? 'selected' : ''} type="button" key={item} onClick={() => setMode(item)}>{item}</button>)}</div>
           {mode !== 'login' && <><label htmlFor="player-name">Player name</label><input id="player-name" value={name} maxLength={32} autoComplete="nickname" onChange={(event) => setName(event.target.value)} placeholder="Guest" /></>}
           {mode !== 'guest' && <><label htmlFor="email">Email</label><input id="email" type="email" value={email} autoComplete="email" onChange={(event) => setEmail(event.target.value)} /><label htmlFor="password">Password</label><input id="password" type="password" minLength={10} value={password} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} onChange={(event) => setPassword(event.target.value)} /></>}

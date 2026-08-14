@@ -41,6 +41,9 @@ export async function createRepository({ databaseUrl, requireDatabase = false })
       async createMpesaTransaction(input) {
         await pool.query('INSERT INTO mpesa_transactions(user_id,merchant_request_id,checkout_request_id,amount,phone_last4) VALUES($1,$2,$3,$4,$5) ON CONFLICT(checkout_request_id) DO NOTHING', [input.userId, input.merchantRequestId || null, input.checkoutRequestId, input.amount, input.phoneLast4 || null]);
       },
+      async getMpesaTransaction(userId, checkoutRequestId) {
+        return (await pool.query('SELECT checkout_request_id AS "checkoutRequestId",merchant_request_id AS "merchantRequestId",amount,status,result_code AS "resultCode",result_description AS "resultDescription",created_at AS "createdAt",updated_at AS "updatedAt" FROM mpesa_transactions WHERE user_id=$1 AND checkout_request_id=$2', [userId, checkoutRequestId])).rows[0] || null;
+      },
       async completeMpesaTransaction(input) {
         const result = await pool.query("UPDATE mpesa_transactions SET merchant_request_id=COALESCE(merchant_request_id,$2),status=$3,result_code=$4,result_description=$5,receipt_number=COALESCE(receipt_number,$6),transaction_date=COALESCE(transaction_date,$7),phone_last4=COALESCE(phone_last4,$8),updated_at=NOW() WHERE checkout_request_id=$1 AND status='pending'", [input.checkoutRequestId, input.merchantRequestId || null, input.status, input.resultCode, input.resultDescription, input.receiptNumber, input.transactionDate, input.phoneLast4]);
         return result.rowCount === 1;
@@ -62,6 +65,7 @@ export async function createRepository({ databaseUrl, requireDatabase = false })
     async settleGame({ gameId, winnerId, participants, changes }) { if (settledGames.has(gameId)) return null; settledGames.add(gameId); for (const id of participants) wallets.set(id, Math.max(0, (wallets.get(id) ?? STARTING_CHIPS) + Number(changes[id] || 0))); return Object.fromEntries(participants.map((id) => [id, wallets.get(id)])); },
     async recordKadi() {},
     async createMpesaTransaction(input) { if (!this.mpesaTransactions) this.mpesaTransactions = new Map(); if (!this.mpesaTransactions.has(input.checkoutRequestId)) this.mpesaTransactions.set(input.checkoutRequestId, { ...input, status: 'pending' }); },
+    async getMpesaTransaction(userId, checkoutRequestId) { const transaction = this.mpesaTransactions?.get(checkoutRequestId); return transaction?.userId === userId ? transaction : null; },
     async completeMpesaTransaction(input) { if (!this.mpesaTransactions) this.mpesaTransactions = new Map(); const current = this.mpesaTransactions.get(input.checkoutRequestId); if (!current || current.status !== 'pending') return false; this.mpesaTransactions.set(input.checkoutRequestId, { ...current, ...input }); return true; },
     async close() {},
   };

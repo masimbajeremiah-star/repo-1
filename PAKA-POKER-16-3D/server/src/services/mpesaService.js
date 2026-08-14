@@ -66,6 +66,11 @@ export function createMpesaService({ config, repository, fetchImpl = fetch }) {
   }
 
   return {
+    async getTransactionStatus(userId, checkoutRequestId) {
+      if (!userId || !checkoutRequestId) return null;
+      return repository.getMpesaTransaction(userId, checkoutRequestId);
+    },
+
     async triggerStkPush({ userId, phoneNumber, amount }) {
       assertConfigured();
       const numericAmount = Number(amount);
@@ -123,4 +128,3 @@ export function createMpesaService({ config, repository, fetchImpl = fetch }) {
     },
   };
 }
-

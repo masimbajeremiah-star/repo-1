@@ -5,7 +5,7 @@ import GameScene from '../game/GameScene';
 import AssetLoader from '../components/AssetLoader';
 import PrimaryButton from '../ui/components/PrimaryButton';
 import InfoCard from '../ui/components/InfoCard';
-import { emitEvent } from '../services/socketService';
+import { emitEvent, getMpesaDepositStatus, requestMpesaDeposit } from '../services/socketService';
 
 const suitSymbols = {
   hearts: '♥',
@@ -69,8 +69,78 @@ const kadiRules = [
   },
 ];
 
+function DepositDialog({ onClose }) {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [amount, setAmount] = useState('');
+  const [status, setStatus] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [requestAccepted, setRequestAccepted] = useState(false);
+
+  const submitDeposit = async (event) => {
+    event.preventDefault();
+    const normalizedPhone = phoneNumber.replace(/[\s-]/g, '');
+    if (!/^(?:0[17]\d{8}|254[17]\d{8}|[17]\d{8})$/.test(normalizedPhone)) {
+      setStatus('Enter a valid Kenyan Safaricom number, for example 07XXXXXXXX.');
+      return;
+    }
+    const numericAmount = Number(amount);
+    if (!Number.isInteger(numericAmount) || numericAmount < 1) {
+      setStatus('Enter a whole-number amount of at least KSh 1.');
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus('Requesting an M-PESA prompt…');
+    try {
+      const result = await requestMpesaDeposit(normalizedPhone, numericAmount);
+      setRequestAccepted(true);
+      setSubmitting(false);
+      setStatus(result.customerMessage || 'Request accepted. Complete the prompt on your phone.');
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 2000));
+        const transaction = await getMpesaDepositStatus(result.checkoutRequestId);
+        if (transaction.status === 'succeeded') {
+          setStatus('M-PESA payment confirmed. Gameplay remains available regardless of payment.');
+          return;
+        }
+        if (transaction.status === 'failed') {
+          setStatus(transaction.resultDescription || 'The M-PESA request was not completed. You can continue playing.');
+          return;
+        }
+      }
+      setStatus('The request is still pending. You can close this window and continue playing.');
+    } catch (error) {
+      setStatus(error?.message || 'M-PESA request failed. You can continue playing without depositing.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="deposit-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget && !submitting) onClose();
+    }}>
+      <section className="deposit-dialog" role="dialog" aria-modal="true" aria-labelledby="deposit-title">
+        <button className="deposit-close" type="button" disabled={submitting} onClick={onClose} aria-label="Close deposit dialog">×</button>
+        <span className="deposit-optional">OPTIONAL</span>
+        <h2 id="deposit-title">Deposit with M-PESA</h2>
+        <p>Depositing is optional. You can close this window and continue playing for free.</p>
+        <form onSubmit={submitDeposit}>
+          <label htmlFor="deposit-phone">Safaricom phone number</label>
+          <input id="deposit-phone" inputMode="tel" autoComplete="tel" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} placeholder="07XXXXXXXX" disabled={submitting || requestAccepted} />
+          <label htmlFor="deposit-amount">Amount (KSh)</label>
+          <input id="deposit-amount" inputMode="numeric" type="number" min="1" step="1" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="100" disabled={submitting || requestAccepted} />
+          <PrimaryButton type="submit" disabled={submitting || requestAccepted}>{submitting ? 'REQUESTING…' : requestAccepted ? 'REQUEST SENT' : 'SEND M-PESA PROMPT'}</PrimaryButton>
+        </form>
+        <p className="deposit-status" role="status" aria-live="polite">{status}</p>
+      </section>
+    </div>
+  );
+}
+
 export default function HomePage({ identity }) {
   const [assetsReady, setAssetsReady] = useState(false);
+  const [depositOpen, setDepositOpen] = useState(false);
   const previousPileCountRef = useRef(0);
   const players = useGameStore((state) => state.players);
   const clientId = useGameStore((state) => state.clientId);
@@ -143,11 +213,14 @@ export default function HomePage({ identity }) {
             <div>
               <span>PAKA Poker 16 3D</span>
               <h1>Choose a table</h1>
-              <p>{identity?.name || 'Guest'} · 1,000 starting QA chips</p>
+              <p>{identity?.name || 'Guest'} · Free card gameplay</p>
             </div>
-            <PrimaryButton onClick={() => emitEvent('table.create', { name: `${identity?.name || 'Guest'}'s Table`, maxPlayers: 5 })}>
-              Create Table
-            </PrimaryButton>
+            <div className="lobby-heading-actions">
+              <PrimaryButton onClick={() => setDepositOpen(true)}>Deposit</PrimaryButton>
+              <PrimaryButton onClick={() => emitEvent('table.create', { name: `${identity?.name || 'Guest'}'s Table`, maxPlayers: 5 })}>
+                Create Table
+              </PrimaryButton>
+            </div>
           </div>
           <div className="lobby-table-list" aria-live="polite">
             {tables.length === 0 ? <p>No open tables yet. Create the first one.</p> : tables.map((table) => (
@@ -170,6 +243,7 @@ export default function HomePage({ identity }) {
           </div>
           <p className="lobby-status" role="status">{actionMessage || 'Connected. Select a table to begin.'}</p>
         </section>
+        {depositOpen && <DepositDialog onClose={() => setDepositOpen(false)} />}
       </main>
     );
   }
@@ -181,7 +255,10 @@ export default function HomePage({ identity }) {
           <h1>PAKA Poker 16 3D</h1>
           <p>3D poker lobby with live player state and card dealing.</p>
         </div>
-        <PrimaryButton onClick={dealCards}>Draw Card</PrimaryButton>
+        <div className="page-header-actions">
+          <PrimaryButton onClick={() => setDepositOpen(true)}>Deposit</PrimaryButton>
+          <PrimaryButton onClick={dealCards}>Draw Card</PrimaryButton>
+        </div>
       </header>
 
       <section className="content-grid">
@@ -227,7 +304,6 @@ export default function HomePage({ identity }) {
                       {isActive ? ' • Active' : ''}
                     </strong>
                     <span>Position: {orderIndex >= 0 ? `#${orderIndex + 1}` : '-'}</span>
-                    <span>Chips: {player.chips}</span>
                     <span>Hand: {player.handCount ?? 0}</span>
                   </div>
                 );
@@ -321,7 +397,7 @@ export default function HomePage({ identity }) {
         <div className="scene-panel">
           <div className="mobile-profile-chip">
             <strong>{localPlayer?.name || identity?.name || 'Guest'}</strong>
-            <span>{localPlayer?.chips ?? 1000} chips</span>
+            <span>Free play</span>
           </div>
           <div className="table-controls" aria-label="Game controls">
             {mustSelectSuit && (
@@ -372,7 +448,7 @@ export default function HomePage({ identity }) {
             <div className="winner-overlay" role="dialog" aria-label="Round result">
               <span>WINNER</span>
               <strong>{winner?.name || 'Player'}</strong>
-              <p>{winnerId === clientId ? 'You won 250 chips.' : 'Round complete.'}</p>
+              <p>{winnerId === clientId ? 'You won the round.' : 'Round complete.'}</p>
               <PrimaryButton disabled={!isHost} onClick={() => {
                 setActionMessage('Starting a clean new round…');
                 resetGame();
@@ -398,6 +474,7 @@ export default function HomePage({ identity }) {
           {assetsReady && <GameScene />}
         </div>
       </section>
+      {depositOpen && <DepositDialog onClose={() => setDepositOpen(false)} />}
     </div>
   );
 }

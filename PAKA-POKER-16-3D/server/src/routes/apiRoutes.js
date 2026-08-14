@@ -22,6 +22,16 @@ export function createMpesaRouter({ authService, mpesaService }) {
       next(error);
     }
   });
+  mpesa.get('/status/:checkoutRequestId', async (req, res, next) => {
+    try {
+      const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+      const claims = authService.verifyToken(token);
+      if (!claims) return res.status(401).json({ error: 'Authentication required' });
+      const transaction = await mpesaService.getTransactionStatus(claims.sub, String(req.params.checkoutRequestId || ''));
+      if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+      return res.json({ transaction });
+    } catch (error) { return next(error); }
+  });
   mpesa.post('/callback', async (req, res) => {
     try { await mpesaService.handleCallback(req.body); }
     catch (error) { console.error('M-PESA callback processing failed:', error.message); }

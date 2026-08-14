@@ -53,3 +53,13 @@ test('sandbox and production use their matching OAuth/STK hosts and configured c
   assert.equal(JSON.parse(urls[1].options.body).CallBackURL, config.mpesa.callbackUrl);
 });
 
+test('transaction status is scoped to the authenticated player', async () => {
+  const repository = {
+    async getMpesaTransaction(userId, checkoutRequestId) {
+      return userId === 'owner' && checkoutRequestId === 'checkout-owner' ? { checkoutRequestId, status: 'pending', amount: 1 } : null;
+    },
+  };
+  const service = createMpesaService({ config: { mpesa: { environment: 'sandbox' } }, repository });
+  assert.equal((await service.getTransactionStatus('owner', 'checkout-owner')).status, 'pending');
+  assert.equal(await service.getTransactionStatus('other', 'checkout-owner'), null);
+});

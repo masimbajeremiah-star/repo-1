@@ -434,25 +434,6 @@ function slideCard(mesh, start, target, delay = 0, duration = 700) {
   return () => { cancelled = true; };
 }
 
-function createChips(scene) {
-  const chipMaterial = new THREE.MeshStandardMaterial({ color: '#ef4444', metalness: 0.5, roughness: 0.4 });
-  const chipGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.12, 32);
-
-  const positions = [
-    [1.5, 0.48, 1.5],
-    [-1.5, 0.48, 1.5],
-    [0, 0.48, -1.8],
-  ];
-
-  positions.forEach((pos, index) => {
-    const chip = new THREE.Mesh(chipGeometry, chipMaterial.clone());
-    chip.position.set(...pos);
-    chip.material.color.set(['#ef4444', '#3b82f6', '#f97316'][index]);
-    chip.castShadow = true;
-    scene.add(chip);
-  });
-}
-
 function createCardSpread(scene, faceMap, backTexture) {
   const suits = ['Spades', 'Hearts', 'Diamonds', 'Clubs'];
   return cardLabels.map((label, index) => {
@@ -1191,7 +1172,6 @@ export default function GameScene() {
     let disposed = false;
     const setupScene = async () => {
       try {
-      createChips(scene);
       particles = createParticles(scene);
 
       const [cardBack, faceMap] = await Promise.all([loadTexture(cardBackTexture), loadCardFaceMap()]);
