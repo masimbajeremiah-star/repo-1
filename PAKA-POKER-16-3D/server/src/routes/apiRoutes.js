@@ -7,6 +7,29 @@ router.get('/status', (req, res) => {
 
 export default router;
 
+export function createMpesaRouter({ authService, mpesaService }) {
+  const mpesa = express.Router();
+  mpesa.post('/stkpush', async (req, res, next) => {
+    try {
+      const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+      const claims = authService.verifyToken(token);
+      if (!claims) return res.status(401).json({ error: 'Authentication required' });
+      const result = await mpesaService.triggerStkPush({ userId: claims.sub, phoneNumber: req.body.phoneNumber, amount: req.body.amount });
+      res.status(202).json(result);
+    } catch (error) {
+      if (String(error.message).startsWith('M-PESA is not configured')) return res.status(503).json({ error: error.message });
+      if (String(error.message).includes('valid Kenyan') || String(error.message).startsWith('Amount must')) return res.status(400).json({ error: error.message });
+      next(error);
+    }
+  });
+  mpesa.post('/callback', async (req, res) => {
+    try { await mpesaService.handleCallback(req.body); }
+    catch (error) { console.error('M-PESA callback processing failed:', error.message); }
+    res.status(200).json({ ResultCode: 0, ResultDesc: 'Accepted' });
+  });
+  return mpesa;
+}
+
 export function createAuthRouter(authService) {
   const auth = express.Router();
   const attempts = new Map();

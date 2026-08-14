@@ -14,6 +14,14 @@ export function loadConfig() {
     tokenTtlSeconds: Number(process.env.AUTH_TOKEN_TTL_SECONDS || 60 * 60 * 24 * 30),
     allowedOrigins: csv(process.env.ALLOWED_ORIGINS, isProduction ? '' : 'http://localhost:4173,http://127.0.0.1:4173,https://localhost,capacitor://localhost'),
     requireDatabase: process.env.REQUIRE_DATABASE === 'true' || isProduction,
+    mpesa: {
+      environment: process.env.MPESA_ENV || 'sandbox',
+      consumerKey: process.env.MPESA_CONSUMER_KEY || '',
+      consumerSecret: process.env.MPESA_CONSUMER_SECRET || '',
+      shortCode: process.env.MPESA_SHORTCODE || '',
+      passkey: process.env.MPESA_PASSKEY || '',
+      callbackUrl: process.env.MPESA_CALLBACK_URL || '',
+    },
   };
 
   const errors = [];
@@ -21,6 +29,7 @@ export function loadConfig() {
   if (!config.tokenSecret || config.tokenSecret.length < 24) errors.push('AUTH_TOKEN_SECRET must contain at least 24 characters');
   if (config.requireDatabase && !config.databaseUrl) errors.push('DATABASE_URL is required');
   if (isProduction && config.allowedOrigins.length === 0) errors.push('ALLOWED_ORIGINS is required in production');
+  if (!['sandbox', 'production'].includes(config.mpesa.environment)) errors.push('MPESA_ENV must be sandbox or production');
   if (errors.length) throw new Error(`Invalid environment: ${errors.join('; ')}`);
   return config;
 }

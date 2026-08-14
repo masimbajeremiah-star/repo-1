@@ -3,14 +3,16 @@ import express from 'express';
 import { createServer } from 'http';
 import { initPokerSocket } from './src/services/pokerSocket.js';
 import apiRoutes from './src/routes/apiRoutes.js';
-import { createAuthRouter } from './src/routes/apiRoutes.js';
+import { createAuthRouter, createMpesaRouter } from './src/routes/apiRoutes.js';
 import { loadConfig } from './src/config.js';
 import { createRepository } from './src/services/repository.js';
 import { createAuthService } from './src/services/authService.js';
+import { createMpesaService } from './src/services/mpesaService.js';
 
 const config = loadConfig();
 const repository = await createRepository(config);
 const authService = createAuthService({ repository, secret: config.tokenSecret, ttlSeconds: config.tokenTtlSeconds });
+const mpesaService = createMpesaService({ config, repository });
 const app = express();
 const allowedOrigins = config.allowedOrigins;
 app.disable('x-powered-by');
@@ -20,6 +22,7 @@ app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '32kb' }));
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', createAuthRouter(authService));
+app.use('/api/mpesa', createMpesaRouter({ authService, mpesaService }));
 
 // Mount API routes under /api
 app.use('/api', apiRoutes);

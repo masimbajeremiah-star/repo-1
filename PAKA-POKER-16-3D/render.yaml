@@ -18,6 +18,18 @@ services:
           property: connectionString
       - key: ALLOWED_ORIGINS
         sync: false
+      - key: MPESA_ENV
+        value: sandbox
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_SHORTCODE
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_CALLBACK_URL
+        value: https://paka-poker-api.onrender.com/api/mpesa/callback
 databases:
   - name: paka-poker-db
     databaseName: paka_poker
