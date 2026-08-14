@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 jobs:
-  simulator-build:
+  device-build:
     runs-on: macos-15
     defaults:
       run:
@@ -55,13 +55,21 @@ jobs:
           sudo xcode-select -s "$xcode_path/Contents/Developer"
           xcodebuild -version
           xcodebuild -showsdks
-          xcrun simctl list devices available
-      - name: Build and validate unsigned iOS simulator app
+          sw_vers
+          xcrun --sdk iphoneos --show-sdk-version
+      - name: Build and validate unsigned iOS device app and archive
         run: ./scripts/build-ios-ci.sh
-      - name: Upload simulator app
+      - name: Upload unsigned device app
         uses: actions/upload-artifact@v4
         with:
-          name: PAKA-Poker-iOS-Simulator
-          path: ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Debug-iphonesimulator/*.app
+          name: PAKA-Poker-iOS-Unsigned-Device
+          path: PAKA-POKER-16-3D/build/DeviceDerivedData/Build/Products/Debug-iphoneos/App.app
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload unsigned archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: PAKA-Poker-iOS-Unsigned-Archive
+          path: PAKA-POKER-16-3D/build/PAKAPoker.xcarchive
           if-no-files-found: error
           retention-days: 7
