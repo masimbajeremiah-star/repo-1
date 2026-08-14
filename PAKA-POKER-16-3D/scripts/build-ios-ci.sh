@@ -4,6 +4,10 @@ set -euo pipefail
 project_root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$project_root"
 
+node --version
+npm --version
+npx cap --version
+
 export VITE_SOCKET_URL="${VITE_SOCKET_URL:-https://paka-poker-api.onrender.com}"
 export VITE_ADMIN_VIEW=false
 export VITE_SHOW_DEBUG_CONTROLS=false

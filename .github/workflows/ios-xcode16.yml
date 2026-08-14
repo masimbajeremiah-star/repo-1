@@ -40,13 +40,22 @@ jobs:
             PAKA-POKER-16-3D/server/package-lock.json
       - name: Select Xcode 16
         run: |
-          xcode_path="$(find /Applications -maxdepth 1 -type d -name 'Xcode_16*.app' | sort | tail -1)"
+          xcode_path=''
+          for version in 16.4 16.3 16.2 16.1 16.0 16; do
+            candidate="/Applications/Xcode_${version}.app"
+            if [[ -d "$candidate" ]]; then
+              xcode_path="$candidate"
+              break
+            fi
+          done
           if [[ -z "$xcode_path" ]]; then
             echo 'Xcode 16 was not found on this runner.' >&2
             exit 1
           fi
           sudo xcode-select -s "$xcode_path/Contents/Developer"
           xcodebuild -version
+          xcodebuild -showsdks
+          xcrun simctl list devices available
       - name: Build and validate unsigned iOS simulator app
         run: ./scripts/build-ios-ci.sh
       - name: Upload simulator app
