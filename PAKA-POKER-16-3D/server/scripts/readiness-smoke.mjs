@@ -1,6 +1,8 @@
 import { io } from 'socket.io-client';
 
 const url = process.env.TEST_SOCKET_URL || 'http://127.0.0.1:3105';
+const connectTimeoutMs = Number(process.env.TEST_CONNECT_TIMEOUT_MS || (url.startsWith('https://') ? 15000 : 5000));
+const allowDemoCommands = process.env.TEST_DEMO_COMMANDS === 'true' || !url.startsWith('https://');
 
 async function guest(name) {
   const response = await fetch(`${url}/api/auth/guest`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ displayName: name }) });
@@ -18,7 +20,7 @@ function connect(name, authToken, adminView = false) {
     });
     let latestState = null;
     socket.on('gameState', (state) => { latestState = state; });
-    const timeout = setTimeout(() => reject(new Error(`${name} connection timed out`)), 5000);
+    const timeout = setTimeout(() => reject(new Error(`${name} connection timed out`)), connectTimeoutMs);
     socket.once('connect_error', reject);
     socket.once('session.ready', (session) => {
       clearTimeout(timeout);
@@ -107,44 +109,52 @@ a.socket.emit('kadiCall');
 const kadiReason = await kadiRejected;
 if (!String(kadiReason.reason).includes('one card')) throw new Error('KADI validation failed');
 
-const winnerState = new Promise((resolve, reject) => {
-  const timeout = setTimeout(() => reject(new Error('Force-win winner timed out')), 7000);
-  a.socket.on('gameState', (state) => {
-    if (state.gameOver) {
-      clearTimeout(timeout);
-      resolve(state);
-    }
+let privilegedChecks = {
+  winner: 'SKIPPED (production admin authorization required)',
+  playAgain: 'SKIPPED (production admin authorization required)',
+  fullDemo: 'SKIPPED (production admin authorization required)',
+};
+if (allowDemoCommands) {
+  const winnerState = new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Force-win winner timed out')), 7000);
+    a.socket.on('gameState', (state) => {
+      if (state.gameOver) {
+        clearTimeout(timeout);
+        resolve(state);
+      }
+    });
   });
-});
-a.socket.emit('demo.command', { command: 'win' });
-const won = await winnerState;
-if (!won.winnerId || !won.gameOver) throw new Error('Winner state missing');
+  a.socket.emit('demo.command', { command: 'win' });
+  const won = await winnerState;
+  if (!won.winnerId || !won.gameOver) throw new Error('Winner state missing');
 
-const resetState = new Promise((resolve, reject) => {
-  const timeout = setTimeout(() => reject(new Error('Play-again reset timed out')), 7000);
-  a.socket.on('gameState', (state) => {
-    if (!state.gameOver && state.round === won.round + 1 && state.players.every((player) => player.handCount === 4)) {
-      clearTimeout(timeout);
-      resolve(state);
-    }
+  const resetState = new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Play-again reset timed out')), 7000);
+    a.socket.on('gameState', (state) => {
+      if (!state.gameOver && state.round === won.round + 1 && state.players.every((player) => player.handCount === 4)) {
+        clearTimeout(timeout);
+        resolve(state);
+      }
+    });
   });
-});
-a.socket.emit('resetGame');
-const reset = await resetState;
-if (reset.deckCount !== 45 || reset.winnerId) throw new Error('Second round reset is not clean');
+  a.socket.emit('resetGame');
+  const reset = await resetState;
+  if (reset.deckCount !== 45 || reset.winnerId) throw new Error('Second round reset is not clean');
 
-const demoComplete = new Promise((resolve, reject) => {
-  const timeout = setTimeout(() => reject(new Error('Full demo timed out')), 90000);
-  a.socket.on('demo.status', (status) => {
-    if (status.stage === 'COMPLETE') {
-      clearTimeout(timeout);
-      resolve(status);
-    }
+  const demoComplete = new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Full demo timed out')), 90000);
+    a.socket.on('demo.status', (status) => {
+      if (status.stage === 'COMPLETE') {
+        clearTimeout(timeout);
+        resolve(status);
+      }
+    });
   });
-});
-a.socket.emit('demo.command', { command: 'run' });
-await demoComplete;
-a.socket.emit('demo.command', { command: 'stop' });
+  a.socket.emit('demo.command', { command: 'run' });
+  await demoComplete;
+  a.socket.emit('demo.command', { command: 'stop' });
+  privilegedChecks = { winner: 'PASS', playAgain: 'PASS', fullDemo: 'PASS' };
+}
 a.socket.disconnect();
 b2.socket.disconnect();
 console.log(JSON.stringify({
@@ -155,7 +165,5 @@ console.log(JSON.stringify({
   draw: 'PASS',
   reconnectNoDuplicate: 'PASS',
   kadiValidation: 'PASS',
-  winner: 'PASS',
-  playAgain: 'PASS',
-  fullDemo: 'PASS',
+  ...privilegedChecks,
 }));
