@@ -6,13 +6,13 @@ cd "$project_root"
 
 node --version
 npm --version
-npx cap --version
 
 export VITE_SOCKET_URL="${VITE_SOCKET_URL:-https://paka-poker-api.onrender.com}"
 export VITE_ADMIN_VIEW=false
 export VITE_SHOW_DEBUG_CONTROLS=false
 
 npm ci --legacy-peer-deps
+npx cap --version
 npm --prefix client ci
 npm --prefix server ci
 npm --prefix client run lint
