@@ -40,8 +40,8 @@ plutil -extract CFBundleIdentifier raw "$device_app/Info.plist"
 plutil -extract CFBundleDisplayName raw "$device_app/Info.plist"
 plutil -extract MinimumOSVersion raw "$device_app/Info.plist"
 
-rg -a -q 'https://paka-poker-api\.onrender\.com' "$device_app"
-if rg -a -q 'paka-poker-api\.example\.invalid|localhost:3000|127\.0\.0\.1|192\.168\.' "$device_app"; then
+grep -R -a -q 'https://paka-poker-api\.onrender\.com' "$device_app"
+if grep -R -a -E -q 'paka-poker-api\.example\.invalid|localhost:3000|127\.0\.0\.1|192\.168\.' "$device_app"; then
   echo 'A forbidden development backend URL is embedded in the device app.' >&2
   exit 1
 fi
