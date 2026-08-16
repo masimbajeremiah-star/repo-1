@@ -15,8 +15,15 @@ const authService = createAuthService({ repository, secret: config.tokenSecret, 
 const mpesaService = createMpesaService({ config, repository });
 const app = express();
 const allowedOrigins = config.allowedOrigins;
+const corsOptions = {
+  origin: allowedOrigins,
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+};
 app.disable('x-powered-by');
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Allow your server to read JSON bodies in requests
 app.use(express.json({ limit: '32kb' }));

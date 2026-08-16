@@ -4,6 +4,8 @@ import type { Card } from '../cards/Card';
 
 let socket: Socket | null = null;
 const IDENTITY_KEY = 'pakaPokerIdentity';
+const PRODUCTION_SERVER_URL = 'https://paka-poker-api.onrender.com';
+const AUTH_TIMEOUT_MS = 20000;
 
 export type AuthIdentity = { id: string; name: string; token: string; authType: string; chipBalance: number };
 
@@ -12,33 +14,78 @@ export function getTestIdentity(): AuthIdentity | null {
     const value = localStorage.getItem(IDENTITY_KEY);
     if (!value) return null;
     const parsed = JSON.parse(value) as AuthIdentity;
-    return parsed?.id && parsed?.name && parsed?.token ? parsed : null;
+    if (parsed?.id && parsed?.name && parsed?.token) return parsed;
+    localStorage.removeItem(IDENTITY_KEY);
+    return null;
   } catch {
+    localStorage.removeItem(IDENTITY_KEY);
     return null;
   }
 }
 
 function serverUrl() {
-  const configured = String(import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? 'http://localhost:3000' : '')).replace(/\/$/, '');
-  if (!configured) throw new Error('VITE_SOCKET_URL is required for production builds');
+  const configured = String(
+    import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? 'http://localhost:3000' : PRODUCTION_SERVER_URL)
+  ).trim().replace(/\/$/, '');
   if (import.meta.env.PROD && !configured.startsWith('https://')) throw new Error('Production multiplayer requires an HTTPS VITE_SOCKET_URL');
   return configured;
 }
 
 async function authenticate(path: string, body: Record<string, unknown>): Promise<AuthIdentity> {
-  const response = await fetch(`${serverUrl()}/api/auth/${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || 'Authentication failed');
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(`${serverUrl()}/api/auth/${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('The PAKA Poker server took too long to respond. Please try again.');
+    }
+    throw new Error('Unable to reach the PAKA Poker server. Check your connection and try again.');
+  } finally {
+    window.clearTimeout(timeout);
+  }
+
+  const responseText = await response.text();
+  let payload: Record<string, any> = {};
+  try {
+    payload = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    if (!response.ok) throw new Error(`Authentication service returned an error (${response.status}). Please try again.`);
+    throw new Error('The authentication service returned an invalid response. Please try again.');
+  }
+  if (!response.ok) {
+    const safeFallbacks: Record<number, string> = {
+      400: 'Please check the information you entered.',
+      401: 'Invalid email or password.',
+      409: 'An account with that email already exists.',
+      429: 'Too many login attempts. Please wait a moment and try again.',
+    };
+    throw new Error(typeof payload.error === 'string' ? payload.error : safeFallbacks[response.status] || 'Authentication is temporarily unavailable.');
+  }
+  if (!payload.token || !payload.user?.id || !payload.user?.displayName || !payload.user?.authType || !Number.isFinite(payload.chipBalance)) {
+    throw new Error('The authentication service returned an incomplete response. Please try again.');
+  }
   const identity = { id: payload.user.id, name: payload.user.displayName, authType: payload.user.authType, token: payload.token, chipBalance: payload.chipBalance };
   localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
   return identity;
 }
 
 export function saveTestIdentity(name: string) {
-  return authenticate('guest', { displayName: name, existingToken: getTestIdentity()?.token });
+  const displayName = String(name || '').trim().slice(0, 32) || 'Guest';
+  return authenticate('guest', { displayName, existingToken: getTestIdentity()?.token });
 }
-export function registerEmail(displayName: string, email: string, password: string) { return authenticate('register', { displayName, email, password }); }
-export function loginEmail(email: string, password: string) { return authenticate('login', { email, password }); }
+export function registerEmail(displayName: string, email: string, password: string) {
+  return authenticate('register', { displayName: String(displayName || '').trim().slice(0, 32) || 'Player', email: String(email || '').trim().toLowerCase(), password });
+}
+export function loginEmail(email: string, password: string) {
+  return authenticate('login', { email: String(email || '').trim().toLowerCase(), password });
+}
 export function clearIdentity() { localStorage.removeItem(IDENTITY_KEY); disconnectSocket(); }
 
 export type MpesaStkResponse = {
