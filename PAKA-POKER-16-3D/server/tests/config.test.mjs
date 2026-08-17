@@ -8,6 +8,7 @@ test('CORS allowlist includes supported Vite preview, development, and Capacitor
     'http://127.0.0.1:4175',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'https://masimbajeremiah-star.github.io',
     'https://localhost',
     'capacitor://localhost',
   ].forEach((origin) => assert.ok(BUILTIN_CLIENT_ORIGINS.includes(origin), `missing origin: ${origin}`));
