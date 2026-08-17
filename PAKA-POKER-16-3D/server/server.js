@@ -3,16 +3,18 @@ import express from 'express';
 import { createServer } from 'http';
 import { initPokerSocket } from './src/services/pokerSocket.js';
 import apiRoutes from './src/routes/apiRoutes.js';
-import { createAuthRouter, createMpesaRouter } from './src/routes/apiRoutes.js';
+import { createAuthRouter, createMonetizationRouter, createMpesaRouter } from './src/routes/apiRoutes.js';
 import { loadConfig } from './src/config.js';
 import { createRepository } from './src/services/repository.js';
 import { createAuthService } from './src/services/authService.js';
 import { createMpesaService } from './src/services/mpesaService.js';
+import { createMonetizationService } from './src/services/monetizationService.js';
 
 const config = loadConfig();
 const repository = await createRepository(config);
 const authService = createAuthService({ repository, secret: config.tokenSecret, ttlSeconds: config.tokenTtlSeconds });
 const mpesaService = createMpesaService({ config, repository });
+const monetizationService = createMonetizationService({ repository });
 const app = express();
 const allowedOrigins = config.allowedOrigins;
 const corsOptions = {
@@ -38,6 +40,7 @@ app.get('/health', async (_req, res) => {
 });
 app.use('/api/auth', createAuthRouter(authService));
 app.use('/api/mpesa', createMpesaRouter({ authService, mpesaService }));
+app.use('/api/monetization', createMonetizationRouter({ authService, monetizationService }));
 
 // Mount API routes under /api
 app.use('/api', apiRoutes);

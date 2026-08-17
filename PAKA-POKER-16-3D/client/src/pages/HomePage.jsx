@@ -6,6 +6,9 @@ import AssetLoader from '../components/AssetLoader';
 import PrimaryButton from '../ui/components/PrimaryButton';
 import InfoCard from '../ui/components/InfoCard';
 import { emitEvent, getMpesaDepositStatus, requestMpesaDeposit } from '../services/socketService';
+import MonetizationHub from '../components/MonetizationHub';
+import { MONETIZATION_FLAGS } from '../monetization/config';
+import { useMonetizationStore } from '../store/useMonetizationStore';
 
 const suitSymbols = {
   hearts: '♥',
@@ -141,6 +144,7 @@ function DepositDialog({ onClose }) {
 export default function HomePage({ identity }) {
   const [assetsReady, setAssetsReady] = useState(false);
   const [depositOpen, setDepositOpen] = useState(false);
+  const [hubView, setHubView] = useState(null);
   const previousPileCountRef = useRef(0);
   const players = useGameStore((state) => state.players);
   const clientId = useGameStore((state) => state.clientId);
@@ -166,6 +170,8 @@ export default function HomePage({ identity }) {
   const questionState = useGameStore((state) => state.questionState);
   const selectedSuit = useGameStore((state) => state.selectedSuit);
   const suitSelectionPlayerId = useGameStore((state) => state.suitSelectionPlayerId);
+  const monetizationAccount = useMonetizationStore((state) => state.account);
+  const loadMonetization = useMonetizationStore((state) => state.load);
 
   useSocket();
   const showDebugControls = import.meta.env.DEV && import.meta.env.VITE_SHOW_DEBUG_CONTROLS === 'true';
@@ -195,6 +201,8 @@ export default function HomePage({ identity }) {
           : 'Your turn — draw or drag a playable card to the center.'
   );
 
+  useEffect(() => { loadMonetization(); }, [loadMonetization]);
+
   useEffect(() => {
     if (pile.length > previousPileCountRef.current) {
       const latestCard = pile[pile.length - 1];
@@ -213,7 +221,7 @@ export default function HomePage({ identity }) {
             <div>
               <span>PAKA Poker 16 3D</span>
               <h1>Choose a table</h1>
-              <p>{identity?.name || 'Guest'} · Free card gameplay</p>
+              <p>{identity?.name || 'Guest'} · <strong className={`plan-label ${monetizationAccount?.entitlements.plan === 'plus' ? 'plus' : ''}`}>{monetizationAccount?.entitlements.plan === 'plus' ? 'PAKA PLUS' : 'PAKA FREE'}</strong> · Card gameplay always available</p>
             </div>
             <div className="lobby-heading-actions">
               <PrimaryButton onClick={() => setDepositOpen(true)}>Deposit</PrimaryButton>
@@ -222,6 +230,15 @@ export default function HomePage({ identity }) {
               </PrimaryButton>
             </div>
           </div>
+          <nav className="lobby-feature-nav" aria-label="PAKA features">
+            <button type="button" className="play-selected">PLAY</button>
+            {MONETIZATION_FLAGS.plus && <button type="button" onClick={() => setHubView('plus')}>PAKA PLUS</button>}
+            <button type="button" onClick={() => setHubView('profile')}>PROFILE</button>
+            {MONETIZATION_FLAGS.cosmetics && <button type="button" onClick={() => setHubView('cosmetics')}>COSMETICS</button>}
+            <button type="button" onClick={() => setHubView('rankings')}>RANKINGS</button>
+            {MONETIZATION_FLAGS.clubs && <button type="button" onClick={() => setHubView('clubs')}>CLUBS <small>FOUNDATION</small></button>}
+            {MONETIZATION_FLAGS.creators && <button type="button" onClick={() => setHubView('creators')}>CREATORS <small>FOUNDATION</small></button>}
+          </nav>
           <div className="lobby-table-list" aria-live="polite">
             {tables.length === 0 ? <p>No open tables yet. Create the first one.</p> : tables.map((table) => (
               <article key={table.id} className="lobby-table-row">
@@ -242,8 +259,10 @@ export default function HomePage({ identity }) {
             ))}
           </div>
           <p className="lobby-status" role="status">{actionMessage || 'Connected. Select a table to begin.'}</p>
+          {MONETIZATION_FLAGS.ads && monetizationAccount?.entitlements.adsEnabled && <aside className="ad-placeholder" aria-label="Advertisement placement"><small>PAKA FREE · LOBBY AD PLACEMENT</small><span>Ads never interrupt an active turn.</span></aside>}
         </section>
         {depositOpen && <DepositDialog onClose={() => setDepositOpen(false)} />}
+        {hubView && <MonetizationHub initialView={hubView} onClose={() => setHubView(null)} />}
       </main>
     );
   }
@@ -395,9 +414,30 @@ export default function HomePage({ identity }) {
         </div>
 
         <div className="scene-panel">
-          <div className="mobile-profile-chip">
-            <strong>{localPlayer?.name || identity?.name || 'Guest'}</strong>
-            <span>Free play</span>
+          <div className="game-topbar" aria-label="Game table information">
+            <div className="game-utility game-utility-left">
+              <PrimaryButton onClick={() => emitEvent('table.leave')}>← Leave Table</PrimaryButton>
+              <div className="player-identity-chip">
+                <span className="identity-avatar" aria-hidden="true">
+                  {(localPlayer?.name || identity?.name || 'G').slice(0, 1).toUpperCase()}
+                </span>
+                <span><strong>{localPlayer?.name || identity?.name || 'Guest'}</strong><small>Free play</small></span>
+              </div>
+            </div>
+
+            <div className={`turn-banner ${isYourTurn ? 'your-turn' : ''}`} role="status" aria-live="polite">
+              <small>{isYourTurn ? 'YOUR TURN' : 'CURRENT TURN'}</small>
+              <strong>{activePlayerName}</strong>
+            </div>
+
+            <div className="game-utility game-utility-right">
+              <div className="table-stat"><small>ROUND</small><strong>#{round}</strong></div>
+              <div className="table-stat"><small>DECK</small><strong>{deckCount}</strong></div>
+              <PrimaryButton onClick={() => setDepositOpen(true)}>Deposit</PrimaryButton>
+              <PrimaryButton onClick={() => window.dispatchEvent(new Event('poker:resetCamera'))}>
+                Reset View
+              </PrimaryButton>
+            </div>
           </div>
           <div className="table-controls" aria-label="Game controls">
             {mustSelectSuit && (
@@ -427,12 +467,6 @@ export default function HomePage({ identity }) {
               }}
             >
               KADI
-            </PrimaryButton>
-            <PrimaryButton onClick={() => window.dispatchEvent(new Event('poker:resetCamera'))}>
-              Reset Camera
-            </PrimaryButton>
-            <PrimaryButton onClick={() => emitEvent('table.leave')}>
-              Leave Table
             </PrimaryButton>
             <div className="gameplay-status" role="status" aria-live="polite">
               <span>{controlStatus}</span>

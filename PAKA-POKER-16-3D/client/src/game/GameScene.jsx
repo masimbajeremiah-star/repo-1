@@ -52,44 +52,77 @@ function disposeGroupChildren(group) {
 }
 
 function createTable(scene, woodTexture) {
+  const table = new THREE.Group();
+  const ovalScale = 0.78;
   const gold = new THREE.MeshPhysicalMaterial({
-    color: '#d7a928', metalness: 0.92, roughness: 0.18, clearcoat: 0.75, clearcoatRoughness: 0.16,
+    color: '#d9aa2f', metalness: 0.94, roughness: 0.16, clearcoat: 0.9, clearcoatRoughness: 0.12,
   });
-  const darkGold = new THREE.MeshStandardMaterial({ color: '#6f4610', metalness: 0.84, roughness: 0.25 });
-  const felt = new THREE.MeshStandardMaterial({ color: '#8f0f2f', roughness: 0.96, metalness: 0.01 });
-  const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(2.15, 2.75, 1.65, 64), darkGold);
-  pedestal.position.y = -0.82;
-  pedestal.castShadow = true;
-  const apron = new THREE.Mesh(new THREE.CylinderGeometry(5.45, 5.25, 0.62, 96), gold);
-  apron.position.y = -0.08;
-  apron.castShadow = true;
-  const top = new THREE.Mesh(new THREE.CylinderGeometry(5.15, 5.15, 0.16, 96), felt);
-  top.position.y = 0.28;
-  top.receiveShadow = true;
-  const rail = new THREE.Mesh(new THREE.TorusGeometry(5.28, 0.24, 20, 96), gold);
-  rail.rotation.x = Math.PI / 2;
-  rail.position.y = 0.39;
-  rail.castShadow = true;
-  const innerTrim = new THREE.Mesh(
-    new THREE.TorusGeometry(4.72, 0.035, 10, 96),
-    new THREE.MeshStandardMaterial({ color: '#f7d774', metalness: 0.95, roughness: 0.14 })
+  const darkEdge = new THREE.MeshPhysicalMaterial({
+    color: '#160d09', map: woodTexture || null, metalness: 0.28, roughness: 0.22, clearcoat: 0.95,
+  });
+  const pedestalMaterial = new THREE.MeshStandardMaterial({ color: '#4b2a0a', metalness: 0.62, roughness: 0.28 });
+  const felt = new THREE.MeshStandardMaterial({ color: '#8e102c', roughness: 0.92, metalness: 0.01 });
+  const trim = new THREE.MeshStandardMaterial({ color: '#ffe291', metalness: 0.96, roughness: 0.12 });
+
+  const addOval = (geometry, material, y, { castShadow = false, receiveShadow = false } = {}) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.scale.z = ovalScale;
+    mesh.position.y = y;
+    mesh.castShadow = castShadow;
+    mesh.receiveShadow = receiveShadow;
+    table.add(mesh);
+    return mesh;
+  };
+
+  addOval(new THREE.CylinderGeometry(2.15, 2.75, 1.65, 64), pedestalMaterial, -0.82, { castShadow: true });
+  addOval(new THREE.CylinderGeometry(5.62, 5.38, 0.68, 96), gold, -0.08, { castShadow: true });
+  addOval(new THREE.CylinderGeometry(5.42, 5.42, 0.3, 96), darkEdge, 0.24, { castShadow: true });
+  addOval(new THREE.CylinderGeometry(5.08, 5.08, 0.14, 96), felt, 0.43, { receiveShadow: true });
+
+  [
+    [5.34, 0.26, darkEdge, 0.53],
+    [5.13, 0.07, gold, 0.55],
+    [4.65, 0.035, trim, 0.54],
+  ].forEach(([radius, tube, material, y]) => {
+    const rail = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 18, 96), material);
+    rail.rotation.x = Math.PI / 2;
+    rail.scale.z = ovalScale;
+    rail.position.y = y;
+    rail.castShadow = tube > 0.1;
+    table.add(rail);
+  });
+
+  const actionZone = new THREE.Mesh(
+    new THREE.RingGeometry(1.25, 1.78, 64),
+    new THREE.MeshBasicMaterial({ color: '#e5b94b', transparent: true, opacity: 0.23, side: THREE.DoubleSide })
   );
-  innerTrim.rotation.x = Math.PI / 2;
-  innerTrim.position.y = 0.38;
-  scene.add(pedestal, apron, top, rail, innerTrim);
+  actionZone.rotation.x = -Math.PI / 2;
+  actionZone.position.y = 0.515;
+  actionZone.scale.z = 0.84;
+  table.add(actionZone);
+  scene.add(table);
 }
 
 function createCityWindowTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 256;
+  canvas.width = 256;
+  canvas.height = 512;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#17283d';
+  const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  sky.addColorStop(0, '#4585b2');
+  sky.addColorStop(0.32, '#759fc0');
+  sky.addColorStop(0.58, '#d29a86');
+  sky.addColorStop(1, '#15273d');
+  ctx.fillStyle = sky;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  for (let y = 10; y < 250; y += 16) {
-    for (let x = 8; x < 124; x += 15) {
-      const lit = ((x * 7 + y * 3) % 11) > 3;
-      ctx.fillStyle = lit ? '#ffe8a3' : '#38516b';
+  ctx.fillStyle = 'rgba(255,226,174,.72)';
+  ctx.beginPath();
+  ctx.arc(196, 116, 21, 0, Math.PI * 2);
+  ctx.fill();
+  for (let y = 206; y < 504; y += 18) {
+    for (let x = 8; x < 252; x += 16) {
+      const lit = ((x * 7 + y * 3) % 13) > 3;
+      ctx.fillStyle = lit ? '#ffe5a2' : '#27435e';
       ctx.fillRect(x, y, 8, 8);
     }
   }
@@ -457,11 +490,11 @@ function createCardSpread(scene, faceMap, backTexture) {
 }
 
 function createActivePlayerRing() {
-  const geometry = new THREE.RingGeometry(1.3, 1.5, 64);
+  const geometry = new THREE.RingGeometry(1.28, 1.56, 64);
   const material = new THREE.MeshBasicMaterial({
-    color: '#60a5fa',
+    color: '#ffd86b',
     transparent: true,
-    opacity: 0.65,
+    opacity: 0.82,
     side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending,
   });
@@ -1072,11 +1105,11 @@ export default function GameScene() {
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.background = new THREE.Color('#91c9ec');
-    scene.fog = new THREE.FogExp2('#b9d9eb', 0.0085);
+    scene.background = new THREE.Color('#8bc8ea');
+    scene.fog = new THREE.FogExp2('#c9dfeb', 0.0065);
 
     const camera = new THREE.PerspectiveCamera(56, mount.clientWidth / mount.clientHeight, 0.1, 1000);
-    camera.position.set(0, 7.15, 13.6);
+    camera.position.set(0, 7.35, 13.9);
     camera.lookAt(0, 1.25, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -1129,7 +1162,7 @@ export default function GameScene() {
     drawnCardGroupRef.current = drawnCardGroup;
 
     const handGroup = new THREE.Group();
-    handGroup.position.set(0, 0.46, 3.15);
+    handGroup.position.set(0, 0.58, 3.42);
     scene.add(handGroup);
     handGroupRef.current = handGroup;
 
@@ -1140,13 +1173,13 @@ export default function GameScene() {
 
     const drawDeckLabel = createTextSprite('DRAW DECK');
     if (drawDeckLabel) {
-      drawDeckLabel.position.set(-1.65, 0.48, -4.05);
+      drawDeckLabel.position.set(-1.65, 0.62, -4.05);
       drawDeckLabel.scale.set(1.35, 0.34, 1);
       scene.add(drawDeckLabel);
     }
     const discardLabel = createTextSprite('PLAYED CARDS');
     if (discardLabel) {
-      discardLabel.position.set(0, 0.48, -1.05);
+      discardLabel.position.set(0, 0.62, -1.05);
       discardLabel.scale.set(1.55, 0.34, 1);
       scene.add(discardLabel);
     }
@@ -1218,14 +1251,14 @@ export default function GameScene() {
     controls.target.set(0, 1.25, 0);
     controls.enablePan = false;
     controls.enableZoom = true;
-    controls.zoomSpeed = 2.4;
-    controls.rotateSpeed = 1.05;
+    controls.zoomSpeed = 3.15;
+    controls.rotateSpeed = 1.18;
     controls.enableDamping = true;
-    controls.dampingFactor = 0.07;
-    controls.minDistance = 8.5;
-    controls.maxDistance = 16;
-    controls.minPolarAngle = Math.PI / 5.5;
-    controls.maxPolarAngle = Math.PI / 2.25;
+    controls.dampingFactor = 0.055;
+    controls.minDistance = 8.8;
+    controls.maxDistance = 17.5;
+    controls.minPolarAngle = Math.PI / 5.2;
+    controls.maxPolarAngle = Math.PI / 2.18;
     renderer.domElement.style.touchAction = 'none';
 
     const raycaster = new THREE.Raycaster();
@@ -1278,14 +1311,14 @@ export default function GameScene() {
 
     const setDefaultCamera = () => {
       if (camera.aspect < 0.9) {
-        camera.fov = 70;
-        camera.position.set(0, 8.8, 14.2);
+        camera.fov = 72;
+        camera.position.set(0, 9.05, 14.8);
       } else if (camera.aspect < 1.35) {
-        camera.fov = 61;
-        camera.position.set(0, 8.15, 14.1);
+        camera.fov = 63;
+        camera.position.set(0, 8.35, 14.55);
       } else {
-        camera.fov = 58;
-        camera.position.set(0, 7.65, 14.05);
+        camera.fov = 56;
+        camera.position.set(0, 7.55, 13.85);
       }
       controls.target.set(0, 1.15, 0);
       controls.update();

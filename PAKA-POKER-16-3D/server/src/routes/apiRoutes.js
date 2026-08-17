@@ -7,6 +7,40 @@ router.get('/status', (req, res) => {
 
 export default router;
 
+const authenticatedUser = (authService, req) => {
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  return authService.verifyToken(token)?.sub || null;
+};
+
+export function createMonetizationRouter({ authService, monetizationService }) {
+  const monetization = express.Router();
+  monetization.use((req, res, next) => {
+    const userId = authenticatedUser(authService, req);
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
+    req.authUserId = userId;
+    return next();
+  });
+  monetization.get('/me', async (req, res, next) => {
+    try { return res.json(await monetizationService.getAccount(req.authUserId)); }
+    catch (error) { return next(error); }
+  });
+  monetization.post('/cosmetics/equip', async (req, res, next) => {
+    try { return res.json({ equipped: await monetizationService.equipCosmetic(req.authUserId, String(req.body.slug || '')) }); }
+    catch (error) { return error.statusCode ? res.status(error.statusCode).json({ error: error.message }) : next(error); }
+  });
+  monetization.post('/follow', async (req, res, next) => {
+    try { return res.json(await monetizationService.follow(req.authUserId, String(req.body.userId || ''))); }
+    catch (error) { return error.statusCode ? res.status(error.statusCode).json({ error: error.message }) : next(error); }
+  });
+  monetization.post('/clubs', async (req, res, next) => {
+    try { return res.status(201).json({ club: await monetizationService.createClub(req.authUserId, req.body || {}) }); }
+    catch (error) { return error.statusCode ? res.status(error.statusCode).json({ error: error.message }) : next(error); }
+  });
+  monetization.post('/purchase', (_req, res) => res.status(501).json({ error: 'Platform billing is not configured yet. No subscription was created.' }));
+  monetization.post('/restore', (_req, res) => res.status(501).json({ error: 'Purchase restoration requires a configured platform billing provider.' }));
+  return monetization;
+}
+
 export function createMpesaRouter({ authService, mpesaService }) {
   const mpesa = express.Router();
   mpesa.post('/stkpush', async (req, res, next) => {

@@ -47,3 +47,13 @@ test('production migrations and repository agree on public.mpesa_transactions', 
   assert.match(repository, /FROM public\.mpesa_transactions/);
   assert.match(repository, /UPDATE public\.mpesa_transactions/);
 });
+
+test('monetization migration is additive and contains authoritative entitlement foundations', async () => {
+  const migrationUrl = new URL('../migrations/003_monetization_foundation.sql', import.meta.url);
+  const { readFile } = await import('node:fs/promises');
+  const migration = await readFile(migrationUrl, 'utf8');
+  for (const table of ['subscriptions', 'cosmetic_items', 'user_cosmetics', 'user_equipped_cosmetics', 'player_progression', 'achievements', 'match_history', 'creator_profiles', 'user_follows', 'clubs', 'club_members']) {
+    assert.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS public\\.${table}`));
+  }
+  assert.doesNotMatch(migration, /DROP\s+TABLE|TRUNCATE|DELETE\s+FROM/i);
+});

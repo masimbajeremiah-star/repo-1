@@ -23,7 +23,7 @@ export function getTestIdentity(): AuthIdentity | null {
   }
 }
 
-function serverUrl() {
+export function getServerUrl() {
   const configured = String(
     import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? 'http://localhost:3000' : PRODUCTION_SERVER_URL)
   ).trim().replace(/\/$/, '');
@@ -36,7 +36,7 @@ async function authenticate(path: string, body: Record<string, unknown>): Promis
   const timeout = window.setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
   let response: Response;
   try {
-    response = await fetch(`${serverUrl()}/api/auth/${path}`, {
+    response = await fetch(`${getServerUrl()}/api/auth/${path}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -109,7 +109,7 @@ export type MpesaTransactionStatus = {
 export async function requestMpesaDeposit(phoneNumber: string, amount: number): Promise<MpesaStkResponse> {
   const identity = getTestIdentity();
   if (!identity?.token) throw new Error('Please sign in before making an optional deposit');
-  const response = await fetch(`${serverUrl()}/api/mpesa/stkpush`, {
+  const response = await fetch(`${getServerUrl()}/api/mpesa/stkpush`, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${identity.token}`,
@@ -125,7 +125,7 @@ export async function requestMpesaDeposit(phoneNumber: string, amount: number): 
 export async function getMpesaDepositStatus(checkoutRequestId: string): Promise<MpesaTransactionStatus> {
   const identity = getTestIdentity();
   if (!identity?.token) throw new Error('Authentication required');
-  const response = await fetch(`${serverUrl()}/api/mpesa/status/${encodeURIComponent(checkoutRequestId)}`, {
+  const response = await fetch(`${getServerUrl()}/api/mpesa/status/${encodeURIComponent(checkoutRequestId)}`, {
     headers: { authorization: `Bearer ${identity.token}` },
   });
   const payload = await response.json().catch(() => ({}));
@@ -141,7 +141,7 @@ export function refreshStoredWallet(chipBalance: number) {
 export function connectSocket(playerName = 'Guest') {
   if (!socket) {
     const identity = getTestIdentity();
-    socket = io(serverUrl(), {
+    socket = io(getServerUrl(), {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
