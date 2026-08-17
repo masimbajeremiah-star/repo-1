@@ -747,54 +747,6 @@ function createSeatMarker(position) {
   return group;
 }
 
-function createLuxuryChair() {
-  const chair = new THREE.Group();
-  chair.name = 'burgundy-casino-chair';
-  const gold = new THREE.MeshStandardMaterial({ color: '#bf9130', metalness: 0.88, roughness: 0.24 });
-  const leather = new THREE.MeshPhysicalMaterial({ color: '#4c081b', roughness: 0.32, clearcoat: 0.58, clearcoatRoughness: 0.25 });
-  const seat = new THREE.Mesh(new THREE.CapsuleGeometry(0.7, 0.22, 8, 20), leather);
-  seat.rotation.x = Math.PI / 2;
-  seat.scale.z = 1.08;
-  seat.position.set(0, -0.28, -0.42);
-  const back = new THREE.Mesh(new THREE.CapsuleGeometry(0.7, 0.72, 10, 24), leather);
-  back.scale.z = 0.2;
-  back.position.set(0, 0.55, -1.02);
-  seat.castShadow = true;
-  back.castShadow = true;
-  chair.add(seat, back);
-  const backTrim = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.045, 8, 40, Math.PI), gold);
-  backTrim.position.set(0, 1.36, -0.88);
-  backTrim.rotation.z = Math.PI;
-  chair.add(backTrim);
-  [-1, 1].forEach((side) => {
-    const armPost = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.62, 10), gold);
-    armPost.position.set(side * 0.72, -0.02, -0.38);
-    const armPad = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.54, 6, 12), leather);
-    armPad.rotation.x = Math.PI / 2;
-    armPad.position.set(side * 0.72, 0.28, -0.19);
-    chair.add(armPost, armPad);
-  });
-  [-0.34, 0, 0.34].forEach((x) => [-0.05, 0.38, 0.78].forEach((y) => {
-    const button = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), gold);
-    button.position.set(x, y, -0.86);
-    chair.add(button);
-  }));
-  [[-0.58, -0.82], [0.58, -0.82], [-0.58, 0.02], [0.58, 0.02]].forEach(([x, z]) => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, 1.05, 12), gold);
-    leg.position.set(x, -0.84, z);
-    chair.add(leg);
-  });
-  return chair;
-}
-
-function createEmptyLuxuryChair(position) {
-  const group = new THREE.Group();
-  group.add(createLuxuryChair());
-  group.position.set(position[0], 0.13, position[2]);
-  group.lookAt(0, group.position.y, 0);
-  return group;
-}
-
 function getAvatarInitials(name) {
   if (!name) return '??';
   const words = name.trim().split(' ').filter(Boolean);
@@ -852,7 +804,6 @@ function createPlayerBust(player, position) {
   const clothing = new THREE.MeshPhysicalMaterial({ color, roughness: 0.48, clearcoat: 0.22 });
   const skin = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.68 });
   const hairMaterial = new THREE.MeshStandardMaterial({ color: '#18181b', roughness: 0.9 });
-  group.add(createLuxuryChair());
 
   const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.66, 1.3, 24), clothing);
   torso.position.y = 0.62;
@@ -1209,7 +1160,6 @@ export default function GameScene() {
   const deckCount = useGameStore((state) => state.deckCount);
   const pile = useGameStore((state) => state.pile);
   const lastDrawnCard = useGameStore((state) => state.lastDrawnCard);
-  const hand = useGameStore((state) => state.hand);
   const players = useGameStore((state) => state.players);
   const turnOrder = useGameStore((state) => state.turnOrder);
   const activePlayerId = useGameStore((state) => state.activePlayerId);
@@ -1218,7 +1168,6 @@ export default function GameScene() {
   const kadiEvent = useGameStore((state) => state.kadiEvent);
   const demoStatus = useGameStore((state) => state.demoStatus);
   const celebrationEvent = useGameStore((state) => state.celebrationEvent);
-  const playCardAction = useGameStore((state) => state.playCard);
   const visualSeatOrder = useMemo(() => {
     const localIndex = clientId ? turnOrder.indexOf(clientId) : -1;
     if (localIndex <= 0) return turnOrder;
@@ -1229,7 +1178,6 @@ export default function GameScene() {
   const deckGroupRef = useRef(null);
   const pileGroupRef = useRef(null);
   const drawnCardGroupRef = useRef(null);
-  const handGroupRef = useRef(null);
   const faceMapRef = useRef(null);
   const cardBackRef = useRef(null);
   const turnLabelRef = useRef(null);
@@ -1256,8 +1204,6 @@ export default function GameScene() {
   const [visualPileCount, setVisualPileCount] = useState(0);
   const visualPileCountRef = useRef(0);
   const pileAnimatingRef = useRef(false);
-  const interactionRef = useRef({ activePlayerId: null, clientId: null, gameOver: false, playCard: null });
-  interactionRef.current = { activePlayerId, clientId, gameOver: useGameStore.getState().gameOver, playCard: playCardAction };
   turnOrderRef.current = turnOrder;
   demoRunningRef.current = demoStatus.running;
 
@@ -1359,18 +1305,6 @@ export default function GameScene() {
     scene.add(drawnCardGroup);
     drawnCardGroupRef.current = drawnCardGroup;
 
-    const handGroup = new THREE.Group();
-    // Camera is on +Z. The prior y=.66 placement projected below NDC -1.
-    // This foreground anchor projects into the lower-center viewport and is
-    // closer to the camera than the local avatar and padded table rail.
-    handGroup.position.set(0, 2.8, 6.35);
-    handGroup.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      camera.position.clone().sub(handGroup.position).normalize()
-    );
-    scene.add(handGroup);
-    handGroupRef.current = handGroup;
-
     const pileGroup = new THREE.Group();
     pileGroup.position.set(0, 0, 0);
     scene.add(pileGroup);
@@ -1467,54 +1401,6 @@ export default function GameScene() {
     controls.maxPolarAngle = Math.PI / 2.18;
     renderer.domElement.style.touchAction = 'none';
 
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.0);
-    const planeHit = new THREE.Vector3();
-    let draggedCard = null;
-    const updatePointer = (event) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-    };
-    const pointerDown = (event) => {
-      const state = interactionRef.current;
-      if (state.gameOver || state.activePlayerId !== state.clientId || !handGroupRef.current) return;
-      updatePointer(event);
-      const hit = raycaster.intersectObjects(handGroupRef.current.children, false)[0];
-      if (!hit?.object?.userData?.cardId) return;
-      draggedCard = hit.object;
-      draggedCard.userData.dragStart = draggedCard.userData.targetPosition?.clone() || draggedCard.position.clone();
-      controls.enabled = false;
-      renderer.domElement.setPointerCapture?.(event.pointerId);
-    };
-    const pointerMove = (event) => {
-      if (!draggedCard || !handGroupRef.current) return;
-      updatePointer(event);
-      if (!raycaster.ray.intersectPlane(dragPlane, planeHit)) return;
-      draggedCard.position.copy(handGroupRef.current.worldToLocal(planeHit.clone()));
-      draggedCard.position.y = 0.24;
-    };
-    const pointerUp = (event) => {
-      if (!draggedCard || !handGroupRef.current) return;
-      const card = draggedCard;
-      draggedCard = null;
-      controls.enabled = true;
-      renderer.domElement.releasePointerCapture?.(event.pointerId);
-      const worldPosition = card.getWorldPosition(new THREE.Vector3());
-      if (Math.hypot(worldPosition.x, worldPosition.z) < 2.25) {
-        interactionRef.current.playCard?.(card.userData.cardId);
-        card.position.y = 0.12;
-      } else {
-        slideCard(card, card.position.clone(), card.userData.dragStart, 0, 280);
-      }
-    };
-    renderer.domElement.addEventListener('pointerdown', pointerDown);
-    renderer.domElement.addEventListener('pointermove', pointerMove);
-    renderer.domElement.addEventListener('pointerup', pointerUp);
-    renderer.domElement.addEventListener('pointercancel', pointerUp);
-
     const setDefaultCamera = () => {
       if (camera.aspect < 0.9) {
         camera.fov = 70;
@@ -1527,12 +1413,6 @@ export default function GameScene() {
         camera.position.set(0, 5.35, 10.25);
       }
       controls.target.set(0, 0.92, -0.55);
-      if (handGroupRef.current) {
-        handGroupRef.current.quaternion.setFromUnitVectors(
-          new THREE.Vector3(0, 1, 0),
-          camera.position.clone().sub(handGroupRef.current.position).normalize()
-        );
-      }
       controls.update();
     };
     const resize = () => {
@@ -1698,10 +1578,6 @@ export default function GameScene() {
       renderer.dispose();
       environmentTarget.dispose();
       controls.dispose();
-      renderer.domElement.removeEventListener('pointerdown', pointerDown);
-      renderer.domElement.removeEventListener('pointermove', pointerMove);
-      renderer.domElement.removeEventListener('pointerup', pointerUp);
-      renderer.domElement.removeEventListener('pointercancel', pointerUp);
       renderer.domElement.removeEventListener('dblclick', resetCamera);
       window.removeEventListener('poker:resetCamera', resetCamera);
       window.removeEventListener('poker:demoStage', demoCamera);
@@ -1836,8 +1712,6 @@ export default function GameScene() {
       const player = players.find((p) => p.id === playerId);
       if (player) {
         seatGroup.add(createPlayerBust(player, position));
-      } else {
-        seatGroup.add(createEmptyLuxuryChair(position));
       }
       const seatRole = playerId === clientId ? 'YOU' : `PLAYER ${index + 1}`;
       const labelText = player ? `${seatRole} • ${player.name} • ${player.handCount ?? 0} CARDS` : `PLAYER ${index + 1} • OPEN SEAT`;
@@ -2026,125 +1900,6 @@ export default function GameScene() {
       mounted = false;
     };
   }, [pile, visualPileCount, cardAssetsReady]);
-
-  /*
-   * ============================================================
-   * FULL 3D PLAYER HAND
-   * ============================================================
-   *
-   * The server's myHand event is authoritative.
-   * Every card in Zustand's hand[] gets its own 3D mesh.
-   */
-  useEffect(() => {
-    const handGroup = handGroupRef.current;
-    const faceMap = faceMapRef.current;
-    const cardBack = cardBackRef.current;
-
-    if (!handGroup || !faceMap || !cardBack) {
-      return;
-    }
-
-    let mounted = true;
-
-    disposeGroupChildren(handGroup);
-
-    const animatedCount = clientId ? visualHandCounts[clientId] : undefined;
-    const localDealIsActive = Boolean(clientId) && (
-      dealProcessingRef.current ||
-      dealQueueRef.current.some((item) => item.playerId === clientId)
-    );
-    const visibleCount = localDealIsActive && Number.isFinite(animatedCount)
-      ? Math.min(hand.length, animatedCount)
-      : hand.length;
-    const visibleHand = hand.slice(0, visibleCount);
-    if (visibleHand.length === 0) {
-      return () => {
-        mounted = false;
-      };
-    }
-
-    const syncHand = async () => {
-      const meshes = await Promise.all(
-        visibleHand.map(async (card, index) => {
-          const frontTexture =
-            createCardFaceTexture(card.rank || String(card.value), card.suit) ||
-            faceMap[card.rank] ||
-            faceMap.A;
-
-          const mesh = await createCardMesh({
-            frontTexture,
-            backTexture: cardBack,
-          });
-
-          const count = visibleHand.length;
-          const spacing = count <= 5 ? 0.82 : 0.6;
-          const center = (count - 1) / 2;
-
-          const target = new THREE.Vector3(
-            (index - center) * spacing,
-            0.02,
-            Math.abs(index - center) * 0.035
-          );
-          mesh.position.copy(target);
-          mesh.userData.targetPosition = target;
-          mesh.scale.setScalar(1.42);
-
-          // Parent +Y is aligned with the camera, so +Y card faces are
-          // guaranteed to face the player. Rotation around Y creates the fan.
-          mesh.rotation.x = 0;
-          mesh.rotation.y = (index - center) * 0.045;
-
-          mesh.userData.cardId = card.id;
-          mesh.name = `local-hand-card-${card.id}`;
-
-          return mesh;
-        })
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      meshes.forEach((mesh) => {
-        handGroup.add(mesh);
-      });
-      handGroup.updateMatrixWorld(true);
-      if (import.meta.env.DEV) {
-        const camera = cameraRef.current;
-        console.debug('[PAKA VISUAL]', {
-          handLength: hand.length,
-          visibleHandLength: visibleHand.length,
-          visualHandCount: animatedCount ?? null,
-          clientId,
-          cardAssetsReady,
-          localCardMeshes: handGroup.children.length,
-          localHandWorldPosition: handGroup.getWorldPosition(new THREE.Vector3()).toArray(),
-          parentVisible: handGroup.visible,
-          cameraPosition: camera?.position.toArray() || null,
-          cameraDirection: camera?.getWorldDirection(new THREE.Vector3()).toArray() || null,
-          cards: handGroup.children.map((child) => {
-            const worldPosition = child.getWorldPosition(new THREE.Vector3());
-            return {
-              name: child.name,
-              visible: child.visible,
-              worldPosition: worldPosition.toArray(),
-              projectedPosition: camera ? worldPosition.clone().project(camera).toArray() : null,
-              worldQuaternion: child.getWorldQuaternion(new THREE.Quaternion()).toArray(),
-              worldScale: child.getWorldScale(new THREE.Vector3()).toArray(),
-            };
-          }),
-          pileLength: pile.length,
-          topCardMesh: Boolean(pileGroupRef.current?.getObjectByName('authoritative-top-played-card')),
-        });
-      }
-    };
-
-    syncHand();
-
-    return () => {
-      mounted = false;
-    };
-  }, [hand, cardAssetsReady, visualHandCounts, clientId]);
 
   /* cardDrawn is informational only; the authoritative hand-count queue
      supplies the single physical dealer animation. */

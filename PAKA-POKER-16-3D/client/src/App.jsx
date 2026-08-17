@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import { getTestIdentity, saveTestIdentity, registerEmail, loginEmail } from './services/socketService';
+import { icons } from './assets';
 
 export default function App() {
   const [identity, setIdentity] = useState(() => getTestIdentity());
@@ -28,7 +29,7 @@ export default function App() {
             setIdentity(result);
           } catch (error) { setAuthError(error instanceof Error ? error.message : 'Authentication failed'); } finally { setLoading(false); }
         }}>
-          <img src="/assets/icons/logo.svg" alt="PAKA Poker 16" />
+          <img src={icons.logo} alt="PAKA Poker 16" />
           <h1>PAKA Poker 16 3D</h1>
           <p>Play freely as a guest or account holder. Optional M-PESA deposits never restrict gameplay.</p>
           <div className="auth-tabs">{['guest','login','register'].map((item) => <button className={mode === item ? 'selected' : ''} disabled={loading} type="button" key={item} onClick={() => { setMode(item); setAuthError(''); }}>{item}</button>)}</div>

@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 
-const ASSET_BASE_PATH = '/assets';
+// Vite BASE_URL is `/` for local/Capacitor builds and `/repo-1/` for the
+// production GitHub Pages build. Asset requests must follow that base or card
+// texture loading rejects before the Three.js card renderers become ready.
+const viteBasePath = String(import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
+const ASSET_BASE_PATH = `${viteBasePath}/assets`;
 
 export const assetPath = (relativePath) => `${ASSET_BASE_PATH}/${relativePath}`;
 

@@ -7,6 +7,7 @@ import PrimaryButton from '../ui/components/PrimaryButton';
 import InfoCard from '../ui/components/InfoCard';
 import { emitEvent, getMpesaDepositStatus, requestMpesaDeposit } from '../services/socketService';
 import MonetizationHub from '../components/MonetizationHub';
+import { LocalHandOverlay, PlayedCardOverlay } from '../components/GameplayCardOverlays';
 import { MONETIZATION_FLAGS } from '../monetization/config';
 import { useMonetizationStore } from '../store/useMonetizationStore';
 
@@ -203,6 +204,7 @@ export default function HomePage({ identity }) {
               ? `Waiting for ${activePlayerName}'s turn.`
               : '';
   const controlStatus = drawDisabledReason || actionMessage || 'Your turn — draw or drag a playable card to the center.';
+  const topPlayedCard = pile[pile.length - 1] || null;
   const progression = monetizationAccount?.profile?.progression;
 
   useEffect(() => { loadMonetization(); }, [loadMonetization]);
@@ -516,6 +518,15 @@ export default function HomePage({ identity }) {
               )}
             </div>
           </div>
+          <PlayedCardOverlay card={topPlayedCard} />
+          <LocalHandOverlay
+            hand={hand}
+            canPlay={isYourTurn && !gameOver}
+            onPlay={(card) => {
+              playCard(card.id);
+              setActionMessage(`Playing ${cardLabel(card)} ${card.suit}...`);
+            }}
+          />
           {gameOver && (
             <div className="winner-overlay" role="dialog" aria-label="Round result">
               <span>WINNER</span>
