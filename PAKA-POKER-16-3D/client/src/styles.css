@@ -15,7 +15,7 @@ html,
   margin: 0;
   min-height: 100%;
   min-height: 100vh;
-  background: linear-gradient(145deg, #fffaf0 0%, #e8d6a5 48%, #f8fbff 100%);
+  background: #020203;
 }
 
 html, body { overscroll-behavior: none; touch-action: manipulation; }
@@ -224,7 +224,7 @@ button {
   display: grid;
   position: relative;
   align-self: start;
-  box-shadow: inset 0 0 0 1px rgba(230, 187, 79, .4);
+  box-shadow: inset 0 0 0 1px rgba(230, 187, 79, .22);
   overflow: hidden;
 }
 

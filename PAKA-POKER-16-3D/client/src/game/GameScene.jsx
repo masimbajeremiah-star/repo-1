@@ -29,6 +29,7 @@ const KADI_RAISE_MS = 300;
 const KADI_HOLD_MS = 2000;
 const KADI_LOWER_MS = 300;
 const KADI_TOTAL_MS = KADI_RAISE_MS + KADI_HOLD_MS + KADI_LOWER_MS;
+const USE_PENTHOUSE_PRESENTATION = false;
 const CELEBRATION_MS = 7500;
 const SEAT_ANCHORS = [
   [0, 0.13, 5.82],
@@ -329,6 +330,45 @@ function createPenthouse(scene) {
     room.add(road);
   }
   scene.add(room);
+}
+
+// The approved gameplay composition deliberately keeps the room in shadow so
+// the table and real game state own the frame. This is a lightweight cinematic
+// enclosure for the live table, not a second game scene.
+function createGameplayBackdrop(scene) {
+  const group = new THREE.Group();
+  group.name = 'approved-gameplay-only-backdrop';
+  const floor = new THREE.Mesh(
+    new THREE.CircleGeometry(15, 96),
+    new THREE.MeshPhysicalMaterial({
+      color: '#070708', roughness: 0.42, metalness: 0.12,
+      clearcoat: 0.36, clearcoatRoughness: 0.3,
+    })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -1.38;
+  floor.receiveShadow = true;
+  group.add(floor);
+
+  const backWall = new THREE.Mesh(
+    new THREE.CylinderGeometry(14.8, 14.8, 10.5, 96, 1, true, Math.PI * 0.17, Math.PI * 0.66),
+    new THREE.MeshStandardMaterial({ color: '#030305', roughness: 0.9, side: THREE.BackSide })
+  );
+  backWall.position.set(0, 3.6, -2.4);
+  backWall.rotation.y = Math.PI * 0.08;
+  group.add(backWall);
+
+  const tableHalo = new THREE.Mesh(
+    new THREE.RingGeometry(6.1, 8.8, 96),
+    new THREE.MeshBasicMaterial({
+      color: '#a56618', transparent: true, opacity: 0.055,
+      side: THREE.DoubleSide, depthWrite: false,
+    })
+  );
+  tableHalo.rotation.x = -Math.PI / 2;
+  tableHalo.position.y = -1.34;
+  group.add(tableHalo);
+  scene.add(group);
 }
 
 function createChandelier(scene) {
@@ -1207,6 +1247,7 @@ export default function GameScene() {
   const dealGenerationRef = useRef(0);
   const visualCountsRef = useRef({});
   const scheduledCountsRef = useRef({});
+  const visualCountsInitializedRef = useRef(false);
   const turnOrderRef = useRef([]);
   const demoRunningRef = useRef(false);
   const [visualHandCounts, setVisualHandCounts] = useState({});
@@ -1256,12 +1297,12 @@ export default function GameScene() {
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.background = new THREE.Color('#050918');
-    scene.fog = new THREE.FogExp2('#0b1429', 0.009);
+    scene.background = new THREE.Color('#020203');
+    scene.fog = new THREE.FogExp2('#050507', 0.014);
 
-    const camera = new THREE.PerspectiveCamera(55, mount.clientWidth / mount.clientHeight, 0.1, 1000);
-    camera.position.set(0, 6.05, 10.85);
-    camera.lookAt(0, 1.15, -0.35);
+    const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 1000);
+    camera.position.set(0, 5.35, 10.25);
+    camera.lookAt(0, 0.92, -0.55);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -1298,8 +1339,12 @@ export default function GameScene() {
       scene.add(fill);
     });
 
-    createPenthouse(scene);
-    createChandelier(scene);
+    if (USE_PENTHOUSE_PRESENTATION) {
+      createPenthouse(scene);
+      createChandelier(scene);
+    } else {
+      createGameplayBackdrop(scene);
+    }
     createTable(scene, null);
 
     const deckGroup = new THREE.Group();
@@ -1313,7 +1358,9 @@ export default function GameScene() {
     drawnCardGroupRef.current = drawnCardGroup;
 
     const handGroup = new THREE.Group();
-    handGroup.position.set(0, 0.95, 3.72);
+    // Camera is on +Z. Keep the local hand in front of the local avatar and
+    // above the foreground rail so authoritative cards cannot be occluded.
+    handGroup.position.set(0, 0.66, 6.32);
     scene.add(handGroup);
     handGroupRef.current = handGroup;
 
@@ -1464,15 +1511,15 @@ export default function GameScene() {
     const setDefaultCamera = () => {
       if (camera.aspect < 0.9) {
         camera.fov = 70;
-        camera.position.set(0, 8.3, 13.4);
+        camera.position.set(0, 7.7, 12.8);
       } else if (camera.aspect < 1.35) {
-        camera.fov = 58;
-        camera.position.set(0, 6.8, 11.8);
+        camera.fov = 56;
+        camera.position.set(0, 6.35, 11.2);
       } else {
-        camera.fov = 55;
-        camera.position.set(0, 6.05, 10.85);
+        camera.fov = 50;
+        camera.position.set(0, 5.35, 10.25);
       }
-      controls.target.set(0, 1.15, -0.35);
+      controls.target.set(0, 0.92, -0.55);
       controls.update();
     };
     const resize = () => {
@@ -1684,6 +1731,17 @@ export default function GameScene() {
   useEffect(() => {
     if (!cardAssetsReady || turnOrder.length === 0) return;
     const targetCounts = Object.fromEntries(players.map((player) => [player.id, player.handCount ?? 0]));
+    // First state received by a newly mounted/reconnected client is already
+    // authoritative. Adopt it immediately; there is no local historical deal
+    // animation to replay before the player may see their cards.
+    if (!visualCountsInitializedRef.current) {
+      visualCountsInitializedRef.current = true;
+      visualCountsRef.current = { ...targetCounts };
+      scheduledCountsRef.current = { ...targetCounts };
+      setVisualHandCounts({ ...targetCounts });
+      setVisualDeckCount(deckCount);
+      return;
+    }
     const scheduled = { ...scheduledCountsRef.current };
     const visible = { ...visualCountsRef.current };
     let queueInvalidated = false;
@@ -1915,15 +1973,19 @@ export default function GameScene() {
     const syncPile = async () => {
       disposeGroupChildren(pileGroup);
       const meshes = await Promise.all(
-        pile.slice(0, visualPileCount).map(async (card, index) => {
+        // The animation counter controls motion only. The authoritative pile
+        // must always have a persistent face-up mesh, including on reconnect.
+        pile.map(async (card, index) => {
           const rank = card.rank || String(card.value);
           const cardFront = createCardFaceTexture(rank, card.suit) || faceMap[rank] || faceMap.A;
           const mesh = await createCardMesh({
             frontTexture: cardFront,
             backTexture: cardBack,
           });
-          mesh.position.set((index % 5) * 0.12, 0.84 + index * 0.008, -0.35 - Math.floor(index / 5) * 0.12);
-          mesh.rotation.y = Math.PI / 8;
+          mesh.position.set((index % 5) * 0.08, 0.89 + index * 0.008, -0.3 - Math.floor(index / 5) * 0.08);
+          mesh.rotation.y = 0.08 + (index % 5) * 0.015;
+          mesh.scale.setScalar(index === pile.length - 1 ? 1.16 : 1);
+          mesh.name = index === pile.length - 1 ? 'authoritative-top-played-card' : `played-card-${index}`;
           return mesh;
         })
       );
@@ -1959,7 +2021,15 @@ export default function GameScene() {
 
     disposeGroupChildren(handGroup);
 
-    const visibleHand = hand.slice(0, visualHandCounts[clientId] ?? 0);
+    const animatedCount = clientId ? visualHandCounts[clientId] : undefined;
+    const localDealIsActive = Boolean(clientId) && (
+      dealProcessingRef.current ||
+      dealQueueRef.current.some((item) => item.playerId === clientId)
+    );
+    const visibleCount = localDealIsActive && Number.isFinite(animatedCount)
+      ? Math.min(hand.length, animatedCount)
+      : hand.length;
+    const visibleHand = hand.slice(0, visibleCount);
     if (visibleHand.length === 0) {
       return () => {
         mounted = false;
@@ -1990,7 +2060,7 @@ export default function GameScene() {
           );
           mesh.position.copy(target);
           mesh.userData.targetPosition = target;
-          mesh.scale.setScalar(1.22);
+          mesh.scale.setScalar(1.42);
 
           mesh.rotation.x = -0.04;
           mesh.rotation.y = (index - center) * 0.045;
@@ -2008,6 +2078,19 @@ export default function GameScene() {
       meshes.forEach((mesh) => {
         handGroup.add(mesh);
       });
+      if (import.meta.env.DEV) {
+        console.debug('[PAKA VISUAL]', {
+          handLength: hand.length,
+          visibleHandLength: visibleHand.length,
+          visualHandCount: animatedCount ?? null,
+          clientId,
+          cardAssetsReady,
+          localCardMeshes: handGroup.children.length,
+          localHandWorldPosition: handGroup.getWorldPosition(new THREE.Vector3()).toArray(),
+          pileLength: pile.length,
+          topCardMesh: Boolean(pileGroupRef.current?.getObjectByName('authoritative-top-played-card')),
+        });
+      }
     };
 
     syncHand();

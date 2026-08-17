@@ -457,7 +457,6 @@ export default function HomePage({ identity }) {
               {gameMenuOpen && (
                 <div className="game-settings-menu">
                   <button type="button" onClick={() => { setGameMenuOpen(false); window.dispatchEvent(new Event('poker:resetCamera')); }}>Reset View</button>
-                  <button type="button" onClick={() => { setGameMenuOpen(false); setDepositOpen(true); }}>Optional Deposit</button>
                 </div>
               )}
             </div>
@@ -494,7 +493,7 @@ export default function HomePage({ identity }) {
               aria-describedby="gameplay-control-status"
               title={drawDisabled ? controlStatus : 'Draw one card from the server-authoritative deck'}
             >
-              {isYourTurn ? 'Draw Card' : 'Waiting for Turn'}
+              Draw Card
             </PrimaryButton>
             <PrimaryButton
               disabled={kadiDisabled}
