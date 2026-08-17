@@ -1239,6 +1239,7 @@ export default function GameScene() {
   const dealerRef = useRef(null);
   const celebrationRef = useRef(null);
   const sceneRef = useRef(null);
+  const cameraRef = useRef(null);
   const deckTopRef = useRef(new THREE.Vector3(DECK_POSITION.x, 1.18, DECK_POSITION.z));
   const shuffleUntilRef = useRef(0);
   const dealQueueRef = useRef([]);
@@ -1303,6 +1304,7 @@ export default function GameScene() {
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 1000);
     camera.position.set(0, 5.35, 10.25);
     camera.lookAt(0, 0.92, -0.55);
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -1358,9 +1360,14 @@ export default function GameScene() {
     drawnCardGroupRef.current = drawnCardGroup;
 
     const handGroup = new THREE.Group();
-    // Camera is on +Z. Keep the local hand in front of the local avatar and
-    // above the foreground rail so authoritative cards cannot be occluded.
-    handGroup.position.set(0, 0.66, 6.32);
+    // Camera is on +Z. The prior y=.66 placement projected below NDC -1.
+    // This foreground anchor projects into the lower-center viewport and is
+    // closer to the camera than the local avatar and padded table rail.
+    handGroup.position.set(0, 2.8, 6.35);
+    handGroup.quaternion.setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      camera.position.clone().sub(handGroup.position).normalize()
+    );
     scene.add(handGroup);
     handGroupRef.current = handGroup;
 
@@ -1520,6 +1527,12 @@ export default function GameScene() {
         camera.position.set(0, 5.35, 10.25);
       }
       controls.target.set(0, 0.92, -0.55);
+      if (handGroupRef.current) {
+        handGroupRef.current.quaternion.setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0),
+          camera.position.clone().sub(handGroupRef.current.position).normalize()
+        );
+      }
       controls.update();
     };
     const resize = () => {
@@ -1694,6 +1707,7 @@ export default function GameScene() {
       window.removeEventListener('poker:demoStage', demoCamera);
       disposeCelebration(scene, celebrationRef.current);
       celebrationRef.current = null;
+      cameraRef.current = null;
     };
   }, []);
 
@@ -1992,6 +2006,19 @@ export default function GameScene() {
 
       if (!mounted) return;
       meshes.forEach((mesh) => pileGroup.add(mesh));
+      pileGroup.updateMatrixWorld(true);
+      if (import.meta.env.DEV) {
+        const camera = cameraRef.current;
+        const topCard = pileGroup.getObjectByName('authoritative-top-played-card');
+        const worldPosition = topCard?.getWorldPosition(new THREE.Vector3());
+        console.debug('[PAKA PILE DEBUG]', {
+          pileLength: pile.length,
+          topCard: pile.at(-1) ? `${pile.at(-1).rank || pile.at(-1).value} ${pile.at(-1).suit}` : null,
+          topCardMesh: Boolean(topCard),
+          worldPosition: worldPosition?.toArray() || null,
+          projectedPosition: camera && worldPosition ? worldPosition.clone().project(camera).toArray() : null,
+        });
+      }
     };
 
     syncPile();
@@ -2055,17 +2082,20 @@ export default function GameScene() {
 
           const target = new THREE.Vector3(
             (index - center) * spacing,
-            0.12 + Math.abs(index - center) * 0.025,
-            0
+            0.02,
+            Math.abs(index - center) * 0.035
           );
           mesh.position.copy(target);
           mesh.userData.targetPosition = target;
           mesh.scale.setScalar(1.42);
 
-          mesh.rotation.x = -0.04;
+          // Parent +Y is aligned with the camera, so +Y card faces are
+          // guaranteed to face the player. Rotation around Y creates the fan.
+          mesh.rotation.x = 0;
           mesh.rotation.y = (index - center) * 0.045;
 
           mesh.userData.cardId = card.id;
+          mesh.name = `local-hand-card-${card.id}`;
 
           return mesh;
         })
@@ -2078,7 +2108,9 @@ export default function GameScene() {
       meshes.forEach((mesh) => {
         handGroup.add(mesh);
       });
+      handGroup.updateMatrixWorld(true);
       if (import.meta.env.DEV) {
+        const camera = cameraRef.current;
         console.debug('[PAKA VISUAL]', {
           handLength: hand.length,
           visibleHandLength: visibleHand.length,
@@ -2087,6 +2119,20 @@ export default function GameScene() {
           cardAssetsReady,
           localCardMeshes: handGroup.children.length,
           localHandWorldPosition: handGroup.getWorldPosition(new THREE.Vector3()).toArray(),
+          parentVisible: handGroup.visible,
+          cameraPosition: camera?.position.toArray() || null,
+          cameraDirection: camera?.getWorldDirection(new THREE.Vector3()).toArray() || null,
+          cards: handGroup.children.map((child) => {
+            const worldPosition = child.getWorldPosition(new THREE.Vector3());
+            return {
+              name: child.name,
+              visible: child.visible,
+              worldPosition: worldPosition.toArray(),
+              projectedPosition: camera ? worldPosition.clone().project(camera).toArray() : null,
+              worldQuaternion: child.getWorldQuaternion(new THREE.Quaternion()).toArray(),
+              worldScale: child.getWorldScale(new THREE.Vector3()).toArray(),
+            };
+          }),
           pileLength: pile.length,
           topCardMesh: Boolean(pileGroupRef.current?.getObjectByName('authoritative-top-played-card')),
         });
