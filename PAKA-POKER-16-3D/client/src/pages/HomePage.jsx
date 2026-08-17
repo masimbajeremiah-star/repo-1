@@ -185,8 +185,9 @@ export default function HomePage({ identity }) {
   const isYourTurn = clientId !== null && activePlayerId === clientId;
   const yourPosition = clientId ? turnOrder.findIndex((id) => id === clientId) : -1;
   const turnOrderPlayers = turnOrder.map((id) => players.find((player) => player.id === id)).filter(Boolean);
-  const drawDisabled = !clientId || gameOver || players.length < 2 || deckCount <= 0 || !isYourTurn;
-  const kadiDisabled = !clientId || gameOver || hand.length !== 1;
+  const drawDisabled = !clientId || gameOver || players.length < 2 || deckCount <= 0 || !isYourTurn || Boolean(suitSelectionPlayerId);
+  const kadiEligible = hand.length === 1 && !questionState && !suitSelectionPlayerId && pendingDraw === 0;
+  const kadiDisabled = !clientId || gameOver || !kadiEligible;
   const controlStatus = actionMessage || (
     !clientId
       ? 'Connecting to the table…'
@@ -202,6 +203,22 @@ export default function HomePage({ identity }) {
   );
 
   useEffect(() => { loadMonetization(); }, [loadMonetization]);
+
+  const requestDrawCard = () => {
+    const connected = dealCards();
+    setActionMessage(connected
+      ? 'Draw request sent to the dealer…'
+      : 'Reconnecting to the table… your draw request is queued.');
+    if (import.meta.env.DEV) console.debug('[PAKA DRAW] button pressed', { clientId, activePlayerId, connected });
+  };
+
+  const requestKadi = () => {
+    const connected = kadiCall();
+    setActionMessage(connected
+      ? 'KADI call sent for server validation…'
+      : 'Reconnecting to the table… your KADI call is queued.');
+    if (import.meta.env.DEV) console.debug('[PAKA KADI] button pressed', { clientId, handCount: hand.length, connected });
+  };
 
   useEffect(() => {
     if (pile.length > previousPileCountRef.current) {
@@ -452,19 +469,19 @@ export default function HomePage({ identity }) {
             )}
             <PrimaryButton
               disabled={drawDisabled}
-              onClick={() => {
-                setActionMessage('Requesting one card from the dealer…');
-                dealCards();
-              }}
+              onClick={requestDrawCard}
+              data-game-action="draw-card"
+              aria-label="Draw one card"
+              title={drawDisabled ? controlStatus : 'Draw one card from the server-authoritative deck'}
             >
               {isYourTurn ? 'Draw Card' : 'Waiting for Turn'}
             </PrimaryButton>
             <PrimaryButton
               disabled={kadiDisabled}
-              onClick={() => {
-                setActionMessage('Calling KADI…');
-                kadiCall();
-              }}
+              onClick={requestKadi}
+              data-game-action="kadi"
+              aria-label="Call KADI"
+              title={kadiDisabled ? 'KADI is available with one card and no unresolved card effect.' : 'Call KADI'}
             >
               KADI
             </PrimaryButton>
@@ -474,7 +491,7 @@ export default function HomePage({ identity }) {
               {selectedSuit && <span className="control-hint">Declared suit: {selectedSuit}</span>}
               {pendingDraw > 0 && <span className="control-hint">Draw penalty: {pendingDraw} cards.</span>}
               {kadiDisabled && !gameOver && (
-                <span className="control-hint">KADI requires exactly one card.</span>
+                <span className="control-hint">KADI requires exactly one card and no unresolved question, suit choice or draw penalty.</span>
               )}
             </div>
           </div>

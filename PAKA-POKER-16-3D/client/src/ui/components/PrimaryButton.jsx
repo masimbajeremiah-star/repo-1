@@ -1,6 +1,6 @@
-export default function PrimaryButton({ children, onClick, disabled, type = 'button' }) {
+export default function PrimaryButton({ children, onClick, disabled, type = 'button', ...buttonProps }) {
   return (
-    <button type={type} className="primary-button" onClick={onClick} disabled={disabled}>
+    <button {...buttonProps} type={type} className="primary-button" onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );

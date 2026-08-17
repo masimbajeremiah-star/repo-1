@@ -32,10 +32,10 @@ type ClientState = {
   selectedSuit: string | null;
   suitSelectionPlayerId: string | null;
 
-  dealCards: () => void;
-  playCard: (cardId: number) => void;
-  kadiCall: () => void;
-  resetGame: () => void;
+  dealCards: () => boolean;
+  playCard: (cardId: number) => boolean;
+  kadiCall: () => boolean;
+  resetGame: () => boolean;
 
   setGameState: (state: GameStateType) => void;
   setPlayers: (players: Player[]) => void;

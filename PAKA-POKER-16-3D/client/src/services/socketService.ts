@@ -229,6 +229,7 @@ export function onKadiCalled(callback: (payload: { playerId: string; playerName:
 export function emitEvent(event: string, payload: unknown = {}) {
   const client = connectSocket();
   client.emit(event, payload);
+  return client.connected;
 }
 
 export function disconnectSocket() {

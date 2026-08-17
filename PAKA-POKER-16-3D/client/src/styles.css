@@ -158,7 +158,7 @@ button {
 
 .table-controls {
   position: absolute;
-  z-index: 9;
+  z-index: 50;
   right: max(22px, env(safe-area-inset-right));
   bottom: max(22px, env(safe-area-inset-bottom));
   display: flex;
@@ -166,7 +166,8 @@ button {
   justify-content: flex-end;
   gap: 10px;
   width: min(590px, calc(100% - 44px));
-  pointer-events: none;
+  pointer-events: auto;
+  isolation: isolate;
 }
 
 .gameplay-status {
@@ -206,6 +207,11 @@ button {
   text-transform: uppercase;
   letter-spacing: .045em;
   pointer-events: auto;
+  position: relative;
+  z-index: 2;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 .table-controls .primary-button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); }
 .table-controls .primary-button:active:not(:disabled) { transform: translateY(1px) scale(.985); }
@@ -218,6 +224,22 @@ button {
   align-self: start;
   box-shadow: inset 0 0 0 1px rgba(230, 187, 79, .4);
   overflow: hidden;
+}
+
+.scene-panel .three-scene {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.scene-panel .three-scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 
 @media (max-width: 900px) {

@@ -6,7 +6,7 @@ import { useGameStore } from '../store/useGameStore';
 import { loadTexture, loadAudio, loadCardFaceMap, createCardFaceTexture, createCardMesh, cardBackTexture, sounds, CARD_WIDTH, CARD_LENGTH, CARD_THICKNESS } from '../assets';
 
 const cardLabels = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const DECK_POSITION = new THREE.Vector3(-1.65, 0.39, -3.25);
+const DECK_POSITION = new THREE.Vector3(-1.65, 0.86, -3.05);
 const DEALER_POSITION = new THREE.Vector3(-0.65, -0.9, -6.05);
 const DEALER_STATES = Object.freeze({
   IDLE: 'IDLE',
@@ -53,53 +53,129 @@ function disposeGroupChildren(group) {
 
 function createTable(scene, woodTexture) {
   const table = new THREE.Group();
-  const ovalScale = 0.78;
+  table.name = 'premium-paka-table-2026';
+  table.userData.design = 'sculpted-red-gold-penthouse';
   const gold = new THREE.MeshPhysicalMaterial({
-    color: '#d9aa2f', metalness: 0.94, roughness: 0.16, clearcoat: 0.9, clearcoatRoughness: 0.12,
+    color: '#d7a82f', metalness: 0.96, roughness: 0.14, clearcoat: 1, clearcoatRoughness: 0.1,
   });
   const darkEdge = new THREE.MeshPhysicalMaterial({
-    color: '#160d09', map: woodTexture || null, metalness: 0.28, roughness: 0.22, clearcoat: 0.95,
+    color: '#130907', map: woodTexture || null, metalness: 0.22, roughness: 0.2, clearcoat: 1,
   });
-  const pedestalMaterial = new THREE.MeshStandardMaterial({ color: '#4b2a0a', metalness: 0.62, roughness: 0.28 });
-  const felt = new THREE.MeshStandardMaterial({ color: '#8e102c', roughness: 0.92, metalness: 0.01 });
-  const trim = new THREE.MeshStandardMaterial({ color: '#ffe291', metalness: 0.96, roughness: 0.12 });
+  const underbody = new THREE.MeshPhysicalMaterial({ color: '#3a160d', metalness: 0.52, roughness: 0.26, clearcoat: 0.7 });
+  const felt = new THREE.MeshStandardMaterial({ color: '#8d0d2a', roughness: 0.94, metalness: 0.01 });
+  const feltBorder = new THREE.MeshStandardMaterial({ color: '#5a0719', roughness: 0.86 });
+  const ivory = new THREE.MeshPhysicalMaterial({ color: '#fff0c7', metalness: 0.68, roughness: 0.2 });
 
-  const addOval = (geometry, material, y, { castShadow = false, receiveShadow = false } = {}) => {
+  const ovalShape = (radiusX, radiusZ) => {
+    const shape = new THREE.Shape();
+    const k = 0.5522847498;
+    shape.moveTo(-radiusX, 0);
+    shape.bezierCurveTo(-radiusX, radiusZ * k, -radiusX * k, radiusZ, 0, radiusZ);
+    shape.bezierCurveTo(radiusX * k, radiusZ, radiusX, radiusZ * k, radiusX, 0);
+    shape.bezierCurveTo(radiusX, -radiusZ * k, radiusX * k, -radiusZ, 0, -radiusZ);
+    shape.bezierCurveTo(-radiusX * k, -radiusZ, -radiusX, -radiusZ * k, -radiusX, 0);
+    return shape;
+  };
+  const addSculptedOval = (radiusX, radiusZ, depth, material, topY, bevelSize = 0.08, bevelSegments = 4) => {
+    const geometry = new THREE.ExtrudeGeometry(ovalShape(radiusX, radiusZ), {
+      depth,
+      bevelEnabled: true,
+      bevelSegments,
+      steps: 1,
+      curveSegments: 72,
+      bevelSize,
+      bevelThickness: Math.min(depth * 0.35, bevelSize),
+    });
+    geometry.center();
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.scale.z = ovalScale;
-    mesh.position.y = y;
-    mesh.castShadow = castShadow;
-    mesh.receiveShadow = receiveShadow;
+    mesh.rotation.x = Math.PI / 2;
+    mesh.position.y = topY - depth / 2;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     table.add(mesh);
     return mesh;
   };
 
-  addOval(new THREE.CylinderGeometry(2.15, 2.75, 1.65, 64), pedestalMaterial, -0.82, { castShadow: true });
-  addOval(new THREE.CylinderGeometry(5.62, 5.38, 0.68, 96), gold, -0.08, { castShadow: true });
-  addOval(new THREE.CylinderGeometry(5.42, 5.42, 0.3, 96), darkEdge, 0.24, { castShadow: true });
-  addOval(new THREE.CylinderGeometry(5.08, 5.08, 0.14, 96), felt, 0.43, { receiveShadow: true });
+  addSculptedOval(2.65, 1.65, 1.32, underbody, -0.1, 0.24, 7).castShadow = true;
+  addSculptedOval(3.28, 2.1, 0.2, gold, -1.08, 0.12, 5).castShadow = true;
+  addSculptedOval(5.86, 4.3, 0.72, underbody, 0.2, 0.2, 7).castShadow = true;
+  addSculptedOval(5.72, 4.16, 0.24, gold, 0.46, 0.12, 5).castShadow = true;
+  addSculptedOval(5.46, 3.92, 0.3, darkEdge, 0.62, 0.14, 6).castShadow = true;
+  addSculptedOval(5.12, 3.58, 0.16, feltBorder, 0.7, 0.08, 4).receiveShadow = true;
+  addSculptedOval(4.96, 3.42, 0.1, felt, 0.77, 0.045, 3).receiveShadow = true;
 
-  [
-    [5.34, 0.26, darkEdge, 0.53],
-    [5.13, 0.07, gold, 0.55],
-    [4.65, 0.035, trim, 0.54],
-  ].forEach(([radius, tube, material, y]) => {
-    const rail = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 18, 96), material);
-    rail.rotation.x = Math.PI / 2;
-    rail.scale.z = ovalScale;
-    rail.position.y = y;
-    rail.castShadow = tube > 0.1;
+  class EllipseRailCurve extends THREE.Curve {
+    constructor(radiusX, radiusZ, y) {
+      super();
+      this.radiusX = radiusX;
+      this.radiusZ = radiusZ;
+      this.y = y;
+    }
+    getPoint(t, target = new THREE.Vector3()) {
+      const angle = t * Math.PI * 2;
+      return target.set(Math.cos(angle) * this.radiusX, this.y, Math.sin(angle) * this.radiusZ);
+    }
+  }
+  const addRail = (radiusX, radiusZ, y, radius, material, segments = 112) => {
+    const rail = new THREE.Mesh(new THREE.TubeGeometry(new EllipseRailCurve(radiusX, radiusZ, y), segments, radius, 12, true), material);
+    rail.castShadow = true;
     table.add(rail);
+  };
+  addRail(5.53, 4.0, 0.7, 0.22, gold);
+  addRail(5.38, 3.87, 0.74, 0.28, darkEdge);
+  addRail(5.12, 3.6, 0.76, 0.045, ivory, 96);
+
+  SEAT_ANCHORS.forEach((seat, index) => {
+    const direction = new THREE.Vector3(seat[0], 0, seat[2]).normalize();
+    const badge = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.055, 32), index === 0 ? ivory : gold);
+    badge.position.set(direction.x * 5.18, 0.91, direction.z * 3.72);
+    badge.rotation.x = Math.PI / 2;
+    table.add(badge);
   });
 
   const actionZone = new THREE.Mesh(
-    new THREE.RingGeometry(1.25, 1.78, 64),
-    new THREE.MeshBasicMaterial({ color: '#e5b94b', transparent: true, opacity: 0.23, side: THREE.DoubleSide })
+    new THREE.RingGeometry(1.16, 1.66, 72),
+    new THREE.MeshBasicMaterial({ color: '#f4cc62', transparent: true, opacity: 0.3, side: THREE.DoubleSide })
   );
   actionZone.rotation.x = -Math.PI / 2;
-  actionZone.position.y = 0.515;
-  actionZone.scale.z = 0.84;
+  actionZone.position.y = 0.84;
+  actionZone.scale.z = 0.76;
   table.add(actionZone);
+  const innerActionZone = new THREE.Mesh(
+    new THREE.RingGeometry(0.82, 0.87, 64),
+    new THREE.MeshBasicMaterial({ color: '#fff0b2', transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+  );
+  innerActionZone.rotation.x = -Math.PI / 2;
+  innerActionZone.position.y = 0.845;
+  innerActionZone.scale.z = 0.76;
+  table.add(innerActionZone);
+
+  const emblemCanvas = document.createElement('canvas');
+  emblemCanvas.width = 512;
+  emblemCanvas.height = 192;
+  const emblemContext = emblemCanvas.getContext('2d');
+  if (emblemContext) {
+    emblemContext.clearRect(0, 0, emblemCanvas.width, emblemCanvas.height);
+    emblemContext.strokeStyle = 'rgba(255, 226, 145, .78)';
+    emblemContext.lineWidth = 5;
+    emblemContext.strokeRect(18, 18, emblemCanvas.width - 36, emblemCanvas.height - 36);
+    emblemContext.fillStyle = '#ffe398';
+    emblemContext.font = '900 72px Georgia';
+    emblemContext.textAlign = 'center';
+    emblemContext.fillText('PAKA', 256, 92);
+    emblemContext.font = '700 25px Arial';
+    emblemContext.letterSpacing = '8px';
+    emblemContext.fillText('POKER 16', 256, 137);
+    const emblemTexture = new THREE.CanvasTexture(emblemCanvas);
+    emblemTexture.colorSpace = THREE.SRGBColorSpace;
+    const emblem = new THREE.Mesh(
+      new THREE.PlaneGeometry(2.25, 0.84),
+      new THREE.MeshBasicMaterial({ map: emblemTexture, transparent: true, opacity: 0.64, depthWrite: false })
+    );
+    emblem.rotation.x = -Math.PI / 2;
+    emblem.position.set(0, 0.846, 2.02);
+    table.add(emblem);
+  }
   scene.add(table);
 }
 
@@ -162,6 +238,7 @@ function createMarbleTexture() {
 
 function createPenthouse(scene) {
   const room = new THREE.Group();
+  room.name = 'paka-77th-floor-penthouse';
   const marbleTexture = createMarbleTexture();
   const marble = new THREE.MeshPhysicalMaterial({
     map: marbleTexture, color: '#f5f2ea', metalness: 0.08, roughness: 0.2, clearcoat: 0.9, clearcoatRoughness: 0.1,
@@ -235,6 +312,7 @@ function createPenthouse(scene) {
 
 function createChandelier(scene) {
   const group = new THREE.Group();
+  group.name = 'paka-crystal-chandelier';
   const gold = new THREE.MeshStandardMaterial({ color: '#e0b94f', metalness: 0.95, roughness: 0.16 });
   const crystal = new THREE.MeshPhysicalMaterial({ color: '#fff7d6', transmission: 0.72, transparent: true, opacity: 0.72, roughness: 0.05 });
   const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.2, 16), gold);
@@ -355,7 +433,7 @@ function createDealerCharacter() {
   dealer.rotation.y = 0;
   dealer.visible = true;
   dealer.userData.shoulderPosition = new THREE.Vector3(0.62, 2.38, 0.12);
-  dealer.userData.idleHandWorld = new THREE.Vector3(-0.05, 0.72, -4.75);
+  dealer.userData.idleHandWorld = new THREE.Vector3(-0.05, 1.02, -4.75);
   dealer.userData.upperArm = upperArm;
   dealer.userData.forearm = forearm;
   dealer.userData.dealingHand = hand;
@@ -388,7 +466,7 @@ async function animateDealerCard({ scene, dealer, backTexture, source, target, p
   const idle = dealer.userData.idleHandWorld.clone();
   const contact = source.clone().add(new THREE.Vector3(0, 0.055, 0));
   const pickup = contact.clone().add(new THREE.Vector3(0, 0.18, -0.12));
-  const release = source.clone().lerp(target, 0.3).setY(0.64);
+  const release = source.clone().lerp(target, 0.3).setY(0.96);
 
   setDealerVisualState(dealer, DEALER_STATES.REACHING_FOR_DECK);
   if (import.meta.env.DEV) console.debug(`[DEAL QUEUE] dealer reaching for deck for ${playerId}`);
@@ -1048,7 +1126,7 @@ export default function GameScene() {
   const dealerRef = useRef(null);
   const celebrationRef = useRef(null);
   const sceneRef = useRef(null);
-  const deckTopRef = useRef(new THREE.Vector3(DECK_POSITION.x, 0.78, DECK_POSITION.z));
+  const deckTopRef = useRef(new THREE.Vector3(DECK_POSITION.x, 1.18, DECK_POSITION.z));
   const shuffleUntilRef = useRef(0);
   const dealQueueRef = useRef([]);
   const dealProcessingRef = useRef(false);
@@ -1162,7 +1240,7 @@ export default function GameScene() {
     drawnCardGroupRef.current = drawnCardGroup;
 
     const handGroup = new THREE.Group();
-    handGroup.position.set(0, 0.58, 3.42);
+    handGroup.position.set(0, 0.91, 3.32);
     scene.add(handGroup);
     handGroupRef.current = handGroup;
 
@@ -1173,13 +1251,13 @@ export default function GameScene() {
 
     const drawDeckLabel = createTextSprite('DRAW DECK');
     if (drawDeckLabel) {
-      drawDeckLabel.position.set(-1.65, 0.62, -4.05);
+      drawDeckLabel.position.set(-1.65, 1.12, -4.0);
       drawDeckLabel.scale.set(1.35, 0.34, 1);
       scene.add(drawDeckLabel);
     }
     const discardLabel = createTextSprite('PLAYED CARDS');
     if (discardLabel) {
-      discardLabel.position.set(0, 0.62, -1.05);
+      discardLabel.position.set(0, 1.12, -1.08);
       discardLabel.scale.set(1.55, 0.34, 1);
       scene.add(discardLabel);
     }
@@ -1263,7 +1341,7 @@ export default function GameScene() {
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.68);
+    const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.0);
     const planeHit = new THREE.Vector3();
     let draggedCard = null;
     const updatePointer = (event) => {
@@ -1406,8 +1484,8 @@ export default function GameScene() {
           rig.hand.position.copy(rig.handPosition).add(new THREE.Vector3(0, lift * 2.05, -lift * 0.35));
           model.userData.torso.position.y = 0.62 + lift * 0.12;
           if (model.userData.kadiLabel) {
-            model.userData.kadiLabel.visible = phase === 'held';
-            model.userData.kadiLabel.material.opacity = phase === 'held' ? 1 : 0;
+            model.userData.kadiLabel.visible = phase !== 'idle';
+            model.userData.kadiLabel.material.opacity = phase === 'held' ? 1 : Math.max(0.35, lift);
           }
           if (gestureTime >= KADI_TOTAL_MS) {
             model.userData.kadiStartedAt = 0;
@@ -1571,7 +1649,7 @@ export default function GameScene() {
           generation: dealGenerationRef.current,
           target: new THREE.Vector3(
             (targetSeat[0] / length) * 4.45,
-            0.56,
+            0.9,
             (targetSeat[2] / length) * 4.45
           ),
         });
@@ -1657,7 +1735,7 @@ export default function GameScene() {
           card.rotation.y = Math.atan2(targetX, targetZ) + (cardIndex - (visibleCount - 1) / 2) * 0.055;
           const target = new THREE.Vector3(
             targetX + (cardIndex - (visibleCount - 1) / 2) * 0.34,
-            0.48 + cardIndex * 0.006,
+            0.86 + cardIndex * 0.006,
             targetZ
           );
           cardMeshes.push({ card, target });
@@ -1732,9 +1810,9 @@ export default function GameScene() {
     if (seatIndex >= 0) {
       const sourceSeat = seatPosition(seatIndex);
       const length = Math.hypot(sourceSeat[0], sourceSeat[2]) || 1;
-      start = new THREE.Vector3((sourceSeat[0] / length) * 4.45, 0.58, (sourceSeat[2] / length) * 4.45);
+      start = new THREE.Vector3((sourceSeat[0] / length) * 4.45, 0.9, (sourceSeat[2] / length) * 4.45);
     }
-    const target = new THREE.Vector3((index % 5) * 0.08, 0.5 + index * 0.006, -0.3);
+    const target = new THREE.Vector3((index % 5) * 0.08, 0.86 + index * 0.006, -0.3);
     pileAnimatingRef.current = true;
     animatePlayedCard({
       scene: sceneRef.current,
@@ -1767,7 +1845,7 @@ export default function GameScene() {
             frontTexture: cardFront,
             backTexture: cardBack,
           });
-          mesh.position.set((index % 5) * 0.12, 0.47 + index * 0.008, -0.35 - Math.floor(index / 5) * 0.12);
+          mesh.position.set((index % 5) * 0.12, 0.84 + index * 0.008, -0.35 - Math.floor(index / 5) * 0.12);
           mesh.rotation.y = Math.PI / 8;
           return mesh;
         })
@@ -1872,5 +1950,5 @@ export default function GameScene() {
     disposeGroupChildren(drawnCardGroup);
   }, [lastDrawnCard, cardAssetsReady]);
 
-  return <div ref={mountRef} className="three-scene" />;
+  return <div ref={mountRef} className="three-scene" data-scene-version="luxury-penthouse-2026" aria-label="PAKA Poker luxury penthouse game table" />;
 }
