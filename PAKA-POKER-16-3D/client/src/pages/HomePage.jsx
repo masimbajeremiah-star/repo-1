@@ -144,6 +144,7 @@ function DepositDialog({ onClose }) {
 export default function HomePage({ identity }) {
   const [assetsReady, setAssetsReady] = useState(false);
   const [depositOpen, setDepositOpen] = useState(false);
+  const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [hubView, setHubView] = useState(null);
   const previousPileCountRef = useRef(0);
   const players = useGameStore((state) => state.players);
@@ -188,19 +189,21 @@ export default function HomePage({ identity }) {
   const drawDisabled = !clientId || gameOver || players.length < 2 || deckCount <= 0 || !isYourTurn || Boolean(suitSelectionPlayerId);
   const kadiEligible = hand.length === 1 && !questionState && !suitSelectionPlayerId && pendingDraw === 0;
   const kadiDisabled = !clientId || gameOver || !kadiEligible;
-  const controlStatus = actionMessage || (
-    !clientId
-      ? 'Connecting to the table…'
-      : gameOver
-        ? 'Game over. Waiting for the table host to reset.'
+  const drawDisabledReason = !clientId
+    ? 'Connecting to the table…'
+    : gameOver
+      ? 'Game over. Waiting for the table host to reset.'
       : players.length < 2
-        ? 'Waiting for another real player to join.'
+        ? 'A second real player must join before the round can begin.'
         : deckCount <= 0
           ? 'The draw deck is empty.'
-        : !isYourTurn
-          ? `Waiting for ${activePlayerName}'s turn.`
-          : 'Your turn — draw or drag a playable card to the center.'
-  );
+          : suitSelectionPlayerId
+            ? (mustSelectSuit ? 'Choose the next suit before drawing.' : 'Waiting for the pending suit choice.')
+            : !isYourTurn
+              ? `Waiting for ${activePlayerName}'s turn.`
+              : '';
+  const controlStatus = drawDisabledReason || actionMessage || 'Your turn — draw or drag a playable card to the center.';
+  const progression = monetizationAccount?.profile?.progression;
 
   useEffect(() => { loadMonetization(); }, [loadMonetization]);
 
@@ -443,18 +446,33 @@ export default function HomePage({ identity }) {
             </div>
 
             <div className={`turn-banner ${isYourTurn ? 'your-turn' : ''}`} role="status" aria-live="polite">
-              <small>{isYourTurn ? 'YOUR TURN' : 'CURRENT TURN'}</small>
-              <strong>{activePlayerName}</strong>
+              <small>{players.length < 2 ? 'WAITING FOR PLAYERS' : isYourTurn ? 'YOUR TURN' : 'CURRENT TURN'}</small>
+              <strong>{players.length < 2 ? 'Round starts with 2 players' : activePlayerName}</strong>
             </div>
 
             <div className="game-utility game-utility-right">
               <div className="table-stat"><small>ROUND</small><strong>#{round}</strong></div>
               <div className="table-stat"><small>DECK</small><strong>{deckCount}</strong></div>
-              <PrimaryButton onClick={() => setDepositOpen(true)}>Deposit</PrimaryButton>
-              <PrimaryButton onClick={() => window.dispatchEvent(new Event('poker:resetCamera'))}>
-                Reset View
-              </PrimaryButton>
+              <button className="game-settings-button" type="button" aria-label="Game settings" aria-expanded={gameMenuOpen} onClick={() => setGameMenuOpen((open) => !open)}>⚙</button>
+              {gameMenuOpen && (
+                <div className="game-settings-menu">
+                  <button type="button" onClick={() => { setGameMenuOpen(false); window.dispatchEvent(new Event('poker:resetCamera')); }}>Reset View</button>
+                  <button type="button" onClick={() => { setGameMenuOpen(false); setDepositOpen(true); }}>Optional Deposit</button>
+                </div>
+              )}
             </div>
+          </div>
+          <aside className="local-player-panel" aria-label="Local player profile">
+            <span className="identity-avatar" aria-hidden="true">{(localPlayer?.name || identity?.name || 'G').slice(0, 1).toUpperCase()}</span>
+            <span className="local-player-copy">
+              <strong>{localPlayer?.name || identity?.name || 'Guest'}</strong>
+              <small>{monetizationAccount?.entitlements.plan === 'plus' ? 'PAKA PLUS' : 'FREE PLAY'}{progression ? ` · LEVEL ${progression.level}` : ''}</small>
+              {progression && <span className="xp-track" aria-label={`${progression.xp} XP`}><i style={{ width: `${Math.min(100, progression.xp % 100)}%` }} /></span>}
+            </span>
+          </aside>
+          <div className={`active-turn-footer ${isYourTurn && players.length >= 2 ? 'your-turn' : ''}`}>
+            <small>{players.length < 2 ? 'WAITING FOR PLAYER' : isYourTurn ? 'YOUR TURN' : 'CURRENT TURN'}</small>
+            <strong>{players.length < 2 ? 'Invite another player' : activePlayerName}</strong>
           </div>
           <div className="table-controls" aria-label="Game controls">
             {mustSelectSuit && (
@@ -471,7 +489,9 @@ export default function HomePage({ identity }) {
               disabled={drawDisabled}
               onClick={requestDrawCard}
               data-game-action="draw-card"
+              data-disabled-reason={drawDisabledReason || undefined}
               aria-label="Draw one card"
+              aria-describedby="gameplay-control-status"
               title={drawDisabled ? controlStatus : 'Draw one card from the server-authoritative deck'}
             >
               {isYourTurn ? 'Draw Card' : 'Waiting for Turn'}
@@ -480,12 +500,14 @@ export default function HomePage({ identity }) {
               disabled={kadiDisabled}
               onClick={requestKadi}
               data-game-action="kadi"
+              data-disabled-reason={kadiDisabled ? 'KADI requires one card with no unresolved effect.' : undefined}
               aria-label="Call KADI"
+              aria-describedby="gameplay-control-status"
               title={kadiDisabled ? 'KADI is available with one card and no unresolved card effect.' : 'Call KADI'}
             >
               KADI
             </PrimaryButton>
-            <div className="gameplay-status" role="status" aria-live="polite">
+            <div id="gameplay-control-status" className="gameplay-status" role="status" aria-live="polite">
               <span>{controlStatus}</span>
               {questionState && <span className="control-hint">Question chain ×{questionState.chainLength}: answer with 4, 5, 6, 7, 9, 10 or Ace; another 8/Queen continues it.</span>}
               {selectedSuit && <span className="control-hint">Declared suit: {selectedSuit}</span>}

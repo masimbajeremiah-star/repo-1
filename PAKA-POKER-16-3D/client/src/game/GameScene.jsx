@@ -6,8 +6,8 @@ import { useGameStore } from '../store/useGameStore';
 import { loadTexture, loadAudio, loadCardFaceMap, createCardFaceTexture, createCardMesh, cardBackTexture, sounds, CARD_WIDTH, CARD_LENGTH, CARD_THICKNESS } from '../assets';
 
 const cardLabels = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const DECK_POSITION = new THREE.Vector3(-1.65, 0.86, -3.05);
-const DEALER_POSITION = new THREE.Vector3(-0.65, -0.9, -6.05);
+const DECK_POSITION = new THREE.Vector3(-1.72, 0.86, -0.58);
+const DEALER_POSITION = new THREE.Vector3(0, -0.88, -5.9);
 const DEALER_STATES = Object.freeze({
   IDLE: 'IDLE',
   REACHING_FOR_DECK: 'REACHING_FOR_DECK',
@@ -31,11 +31,11 @@ const KADI_LOWER_MS = 300;
 const KADI_TOTAL_MS = KADI_RAISE_MS + KADI_HOLD_MS + KADI_LOWER_MS;
 const CELEBRATION_MS = 7500;
 const SEAT_ANCHORS = [
-  [0, 0.13, 6.45],
-  [-6.14, 0.13, 1.99],
-  [-3.79, 0.13, -5.22],
-  [3.79, 0.13, -5.22],
-  [6.14, 0.13, 1.99],
+  [0, 0.13, 5.82],
+  [-5.72, 0.13, 1.62],
+  [-3.25, 0.13, -4.72],
+  [3.25, 0.13, -4.72],
+  [5.72, 0.13, 1.62],
 ];
 const seatPosition = (index) => SEAT_ANCHORS[Math.max(0, Math.min(index, SEAT_ANCHORS.length - 1))];
 
@@ -185,21 +185,21 @@ function createCityWindowTexture() {
   canvas.height = 512;
   const ctx = canvas.getContext('2d');
   const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  sky.addColorStop(0, '#4585b2');
-  sky.addColorStop(0.32, '#759fc0');
-  sky.addColorStop(0.58, '#d29a86');
-  sky.addColorStop(1, '#15273d');
+  sky.addColorStop(0, '#030817');
+  sky.addColorStop(0.34, '#101936');
+  sky.addColorStop(0.61, '#42224b');
+  sky.addColorStop(1, '#100d20');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(255,226,174,.72)';
+  ctx.fillStyle = 'rgba(242,232,218,.76)';
   ctx.beginPath();
-  ctx.arc(196, 116, 21, 0, Math.PI * 2);
+  ctx.arc(196, 92, 16, 0, Math.PI * 2);
   ctx.fill();
   for (let y = 206; y < 504; y += 18) {
     for (let x = 8; x < 252; x += 16) {
-      const lit = ((x * 7 + y * 3) % 13) > 3;
-      ctx.fillStyle = lit ? '#ffe5a2' : '#27435e';
-      ctx.fillRect(x, y, 8, 8);
+      const lit = ((x * 7 + y * 3) % 13) > 2;
+      ctx.fillStyle = lit ? ((x + y) % 5 ? '#ffd98a' : '#b9ddff') : '#111c34';
+      ctx.fillRect(x, y, 7, 8);
     }
   }
   const texture = new THREE.CanvasTexture(canvas);
@@ -245,7 +245,7 @@ function createPenthouse(scene) {
   });
   const gold = new THREE.MeshPhysicalMaterial({ color: '#d6aa35', metalness: 0.94, roughness: 0.2 });
   const white = new THREE.MeshStandardMaterial({ color: '#fffdf5', roughness: 0.36 });
-  const floor = new THREE.Mesh(new THREE.CylinderGeometry(17, 17, 0.35, 128), marble);
+  const floor = new THREE.Mesh(new THREE.CylinderGeometry(15.4, 15.4, 0.35, 128), marble);
   floor.position.y = -1.55;
   floor.receiveShadow = true;
   room.add(floor);
@@ -273,12 +273,12 @@ function createPenthouse(scene) {
   });
 
   const glass = new THREE.MeshPhysicalMaterial({
-    color: '#bfe8ff', transparent: true, opacity: 0.17, transmission: 0.7,
+    color: '#315b82', transparent: true, opacity: 0.2, transmission: 0.72,
     roughness: 0.05, metalness: 0.05, side: THREE.DoubleSide, depthWrite: false,
   });
   const cityTexture = createCityWindowTexture();
-  const cityMaterials = ['#273d58', '#334b66', '#20334c', '#41566e'].map((color) =>
-    new THREE.MeshStandardMaterial({ map: cityTexture, emissiveMap: cityTexture, color, emissive: '#6b5835', emissiveIntensity: 0.42, roughness: 0.7 })
+  const cityMaterials = ['#111827', '#1d2940', '#101a30', '#27334b'].map((color) =>
+    new THREE.MeshStandardMaterial({ map: cityTexture, emissiveMap: cityTexture, color, emissive: '#c29152', emissiveIntensity: 0.78, roughness: 0.72 })
   );
   for (let index = 0; index < 28; index += 1) {
     const angle = (index / 28) * Math.PI * 2;
@@ -291,14 +291,35 @@ function createPenthouse(scene) {
     pane.rotation.y = angle + Math.PI / 2 + 0.055;
     room.add(pane);
   }
-  for (let index = 0; index < 72; index += 1) {
-    const angle = (index / 72) * Math.PI * 2 + (index % 5) * 0.018;
-    const radius = 20 + (index % 8) * 1.45;
-    const height = 2.5 + (index * 13 % 9) * 0.75;
-    const width = 1.1 + (index % 4) * 0.3;
-    const tower = new THREE.Mesh(new THREE.BoxGeometry(width, height, width), cityMaterials[index % cityMaterials.length]);
-    tower.position.set(Math.sin(angle) * radius, -3.1 - height / 2, Math.cos(angle) * radius);
-    room.add(tower);
+  const towerGeometry = new THREE.BoxGeometry(1, 1, 1);
+  const towerMatrix = new THREE.Object3D();
+  cityMaterials.forEach((material, layer) => {
+    const count = 42;
+    const towers = new THREE.InstancedMesh(towerGeometry, material, count);
+    towers.name = `night-skyline-layer-${layer + 1}`;
+    for (let index = 0; index < count; index += 1) {
+      const globalIndex = layer * count + index;
+      const angle = (globalIndex / (count * cityMaterials.length)) * Math.PI * 2 + (index % 7) * 0.012;
+      const radius = 18.4 + layer * 4.4 + (index % 9) * 0.48;
+      const height = 5.6 + ((globalIndex * 17) % 18) * 0.58;
+      const width = 0.85 + ((globalIndex * 7) % 6) * 0.23;
+      const depth = 0.82 + ((globalIndex * 11) % 5) * 0.22;
+      towerMatrix.position.set(Math.sin(angle) * radius, -7.4 + height / 2, Math.cos(angle) * radius);
+      towerMatrix.rotation.y = -angle;
+      towerMatrix.scale.set(width, height, depth);
+      towerMatrix.updateMatrix();
+      towers.setMatrixAt(index, towerMatrix.matrix);
+    }
+    towers.instanceMatrix.needsUpdate = true;
+    room.add(towers);
+  });
+  for (let index = 0; index < 14; index += 1) {
+    const angle = (index / 14) * Math.PI * 2;
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 2.8, 8), gold);
+    antenna.position.set(Math.sin(angle) * 21.5, 6.2 + (index % 3), Math.cos(angle) * 21.5);
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: index % 2 ? '#ff4c65' : '#ffd57b' }));
+    beacon.position.copy(antenna.position).add(new THREE.Vector3(0, 1.45, 0));
+    room.add(antenna, beacon);
   }
   const roadMaterial = new THREE.MeshBasicMaterial({ color: '#f5c451' });
   for (let index = 0; index < 4; index += 1) {
@@ -314,27 +335,44 @@ function createChandelier(scene) {
   const group = new THREE.Group();
   group.name = 'paka-crystal-chandelier';
   const gold = new THREE.MeshStandardMaterial({ color: '#e0b94f', metalness: 0.95, roughness: 0.16 });
-  const crystal = new THREE.MeshPhysicalMaterial({ color: '#fff7d6', transmission: 0.72, transparent: true, opacity: 0.72, roughness: 0.05 });
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.2, 16), gold);
-  stem.position.y = 8.05;
-  group.add(stem);
-  [1.3, 2.15].forEach((radius, ringIndex) => {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.08, 12, 64), gold);
+  const crystal = new THREE.MeshPhysicalMaterial({ color: '#fff4cd', transmission: 0.78, transparent: true, opacity: 0.82, roughness: 0.04, clearcoat: 0.8 });
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 2.1, 18), gold);
+  stem.position.y = 8.1;
+  const crown = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 16), gold);
+  crown.scale.y = 0.48;
+  crown.position.y = 7.25;
+  group.add(stem, crown);
+  [[0.9, 6.95, 10], [1.62, 6.58, 18], [2.38, 6.15, 26]].forEach(([radius, height, count], ringIndex) => {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.075, 12, 72), gold);
     ring.rotation.x = Math.PI / 2;
-    ring.position.y = 7.05 - ringIndex * 0.55;
+    ring.position.y = height;
     group.add(ring);
-    const count = ringIndex ? 18 : 12;
     for (let index = 0; index < count; index += 1) {
       const angle = (index / count) * Math.PI * 2;
-      const drop = new THREE.Mesh(new THREE.OctahedronGeometry(0.13, 0), crystal);
-      drop.scale.y = 2.4;
-      drop.position.set(Math.sin(angle) * radius, ring.position.y - 0.32, Math.cos(angle) * radius);
-      group.add(drop);
+      const strandLength = 0.45 + (index % 4) * 0.13 + ringIndex * 0.12;
+      const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, strandLength, 6), gold);
+      chain.position.set(Math.sin(angle) * radius, height - strandLength / 2, Math.cos(angle) * radius);
+      const drop = new THREE.Mesh(new THREE.OctahedronGeometry(0.12 + ringIndex * 0.018, 0), crystal);
+      drop.scale.y = 2.7;
+      drop.position.set(Math.sin(angle) * radius, height - strandLength - 0.19, Math.cos(angle) * radius);
+      group.add(chain, drop);
+      if (ringIndex === 2 && index % 3 === 0) {
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, radius * 0.84, 8), gold);
+        arm.position.set(Math.sin(angle) * radius * 0.46, height + 0.02, Math.cos(angle) * radius * 0.46);
+        arm.rotation.z = Math.PI / 2;
+        arm.rotation.y = angle;
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), new THREE.MeshBasicMaterial({ color: '#ffe2a3' }));
+        bulb.position.set(Math.sin(angle) * radius * 0.92, height + 0.13, Math.cos(angle) * radius * 0.92);
+        group.add(arm, bulb);
+      }
     }
   });
+  const crystalBowl = new THREE.Mesh(new THREE.SphereGeometry(0.82, 28, 16, 0, Math.PI * 2, Math.PI * 0.48, Math.PI * 0.45), crystal);
+  crystalBowl.position.y = 6.34;
+  group.add(crystalBowl);
   scene.add(group);
-  const light = new THREE.PointLight('#ffdca0', 54, 20, 1.8);
-  light.position.set(0, 6.7, 0);
+  const light = new THREE.PointLight('#ffd49a', 24, 18, 1.8);
+  light.position.set(0, 6.25, 0);
   light.castShadow = true;
   light.shadow.mapSize.set(1024, 1024);
   scene.add(light);
@@ -370,13 +408,13 @@ function createDealerCharacter() {
   const dealer = new THREE.Group();
   dealer.name = 'dealer-character';
   const skin = new THREE.MeshStandardMaterial({ color: '#b97852', roughness: 0.62 });
-  const jacket = new THREE.MeshPhysicalMaterial({ color: '#171923', roughness: 0.38, clearcoat: 0.2 });
+  const jacket = new THREE.MeshPhysicalMaterial({ color: '#4c0b20', roughness: 0.34, clearcoat: 0.32 });
   const shirt = new THREE.MeshStandardMaterial({ color: '#fffdf8', roughness: 0.65 });
   const hairMaterial = new THREE.MeshStandardMaterial({ color: '#15110f', roughness: 0.88 });
 
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.62, 1.15, 8, 20), jacket);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 1.72, 28), jacket);
   torso.position.y = 1.85;
-  torso.scale.set(1.25, 1, 0.68);
+  torso.scale.z = 0.68;
   const shirtFront = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 1.05), shirt);
   shirtFront.position.set(0, 2, 0.58);
   const bowTie = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.08), new THREE.MeshStandardMaterial({ color: '#8f0f2f' }));
@@ -385,6 +423,7 @@ function createDealerCharacter() {
   neck.position.y = 2.72;
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 28, 20), skin);
   head.position.y = 3.15;
+  head.scale.set(0.88, 1.08, 0.94);
   const hair = new THREE.Mesh(new THREE.SphereGeometry(0.41, 24, 12, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMaterial);
   hair.position.y = 3.24;
   [-0.14, 0.14].forEach((x) => {
@@ -421,6 +460,19 @@ function createDealerCharacter() {
     shoe.position.set(x, -0.34, 0.2);
     dealer.add(leg, shoe);
   });
+  [-0.56, 0.56].forEach((x) => {
+    const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.25, 18, 12), jacket);
+    shoulder.scale.set(1.3, 0.8, 0.76);
+    shoulder.position.set(x, 2.35, 0.02);
+    dealer.add(shoulder);
+  });
+  const lapelMaterial = new THREE.MeshStandardMaterial({ color: '#1b1820', roughness: 0.55 });
+  [-0.19, 0.19].forEach((x) => {
+    const lapel = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.72, 3), lapelMaterial);
+    lapel.rotation.z = x < 0 ? -0.2 : 0.2;
+    lapel.position.set(x, 2.13, 0.59);
+    dealer.add(lapel);
+  });
   dealer.add(torso, shirtFront, bowTie, neck, head, hair, nose, mouth, upperArm, forearm, hand, restingArm);
   const dealerLabel = createTextSprite('DEALER');
   if (dealerLabel) {
@@ -429,7 +481,7 @@ function createDealerCharacter() {
     dealer.add(dealerLabel);
   }
   dealer.position.copy(DEALER_POSITION);
-  dealer.scale.setScalar(1.18);
+  dealer.scale.setScalar(1.24);
   dealer.rotation.y = 0;
   dealer.visible = true;
   dealer.userData.shoulderPosition = new THREE.Vector3(0.62, 2.38, 0.12);
@@ -655,22 +707,49 @@ function createSeatMarker(position) {
   return group;
 }
 
-function createEmptyLuxuryChair(position) {
-  const group = new THREE.Group();
+function createLuxuryChair() {
+  const chair = new THREE.Group();
+  chair.name = 'burgundy-casino-chair';
   const gold = new THREE.MeshStandardMaterial({ color: '#bf9130', metalness: 0.88, roughness: 0.24 });
-  const leather = new THREE.MeshPhysicalMaterial({ color: '#5f1024', roughness: 0.4, clearcoat: 0.42 });
-  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.22, 1.42), leather);
+  const leather = new THREE.MeshPhysicalMaterial({ color: '#4c081b', roughness: 0.32, clearcoat: 0.58, clearcoatRoughness: 0.25 });
+  const seat = new THREE.Mesh(new THREE.CapsuleGeometry(0.7, 0.22, 8, 20), leather);
+  seat.rotation.x = Math.PI / 2;
+  seat.scale.z = 1.08;
   seat.position.set(0, -0.28, -0.42);
-  const back = new THREE.Mesh(new THREE.BoxGeometry(1.48, 1.9, 0.22), leather);
+  const back = new THREE.Mesh(new THREE.CapsuleGeometry(0.7, 0.72, 10, 24), leather);
+  back.scale.z = 0.2;
   back.position.set(0, 0.55, -1.02);
   seat.castShadow = true;
   back.castShadow = true;
-  group.add(seat, back);
+  chair.add(seat, back);
+  const backTrim = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.045, 8, 40, Math.PI), gold);
+  backTrim.position.set(0, 1.36, -0.88);
+  backTrim.rotation.z = Math.PI;
+  chair.add(backTrim);
+  [-1, 1].forEach((side) => {
+    const armPost = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 0.62, 10), gold);
+    armPost.position.set(side * 0.72, -0.02, -0.38);
+    const armPad = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.54, 6, 12), leather);
+    armPad.rotation.x = Math.PI / 2;
+    armPad.position.set(side * 0.72, 0.28, -0.19);
+    chair.add(armPost, armPad);
+  });
+  [-0.34, 0, 0.34].forEach((x) => [-0.05, 0.38, 0.78].forEach((y) => {
+    const button = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), gold);
+    button.position.set(x, y, -0.86);
+    chair.add(button);
+  }));
   [[-0.58, -0.82], [0.58, -0.82], [-0.58, 0.02], [0.58, 0.02]].forEach(([x, z]) => {
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, 1.05, 12), gold);
     leg.position.set(x, -0.84, z);
-    group.add(leg);
+    chair.add(leg);
   });
+  return chair;
+}
+
+function createEmptyLuxuryChair(position) {
+  const group = new THREE.Group();
+  group.add(createLuxuryChair());
   group.position.set(position[0], 0.13, position[2]);
   group.lookAt(0, group.position.y, 0);
   return group;
@@ -733,38 +812,18 @@ function createPlayerBust(player, position) {
   const clothing = new THREE.MeshPhysicalMaterial({ color, roughness: 0.48, clearcoat: 0.22 });
   const skin = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.68 });
   const hairMaterial = new THREE.MeshStandardMaterial({ color: '#18181b', roughness: 0.9 });
-  const chairGold = new THREE.MeshStandardMaterial({ color: '#bf9130', metalness: 0.88, roughness: 0.24 });
-  const chairLeather = new THREE.MeshPhysicalMaterial({ color: '#5f1024', roughness: 0.4, clearcoat: 0.42 });
+  group.add(createLuxuryChair());
 
-  const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.22, 1.42), chairLeather);
-  chairSeat.position.set(0, -0.28, -0.42);
-  chairSeat.castShadow = true;
-  const chairBack = new THREE.Mesh(new THREE.BoxGeometry(1.48, 1.9, 0.22), chairLeather);
-  chairBack.position.set(0, 0.55, -1.02);
-  chairBack.castShadow = true;
-  const chairTrim = new THREE.Mesh(new THREE.TorusGeometry(0.77, 0.055, 8, 36, Math.PI), chairGold);
-  chairTrim.position.set(0, 1.47, -0.89);
-  chairTrim.rotation.z = Math.PI;
-  group.add(chairSeat, chairBack, chairTrim);
-  [[-0.58, -0.82], [0.58, -0.82], [-0.58, 0.02], [0.58, 0.02]].forEach(([x, z]) => {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, 1.05, 12), chairGold);
-    leg.position.set(x, -0.84, z);
-    leg.castShadow = true;
-    group.add(leg);
-  });
-
-  const torso = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.62, 0.75, 8, 20),
-    clothing
-  );
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.66, 1.3, 24), clothing);
   torso.position.y = 0.62;
-  torso.scale.set(1.25, 1, 0.72);
+  torso.scale.z = 0.72;
   torso.castShadow = true;
   const head = new THREE.Mesh(
     new THREE.SphereGeometry(0.46, 28, 20),
     skin
   );
   head.position.y = 1.72;
+  head.scale.set(0.88, 1.08, 0.94);
   head.castShadow = true;
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.21, 0.3, 16), skin);
   neck.position.y = 1.35;
@@ -794,6 +853,12 @@ function createPlayerBust(player, position) {
   nose.position.set(0, 1.65, 0.43);
   const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.025, 0.025), new THREE.MeshStandardMaterial({ color: '#8e3342' }));
   mouth.position.set(0, 1.5, 0.39);
+  [-0.53, 0.53].forEach((x) => {
+    const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 12), clothing);
+    shoulder.scale.set(1.25, 0.82, 0.78);
+    shoulder.position.set(x, 1.02, 0.04);
+    group.add(shoulder);
+  });
   let rightArmRig = null;
   const armRigs = [];
   [-1, 1].forEach((side) => {
@@ -923,24 +988,28 @@ function disposeCelebration(scene, group) {
 
 function createTextSprite(text) {
   const canvas = document.createElement('canvas');
-  const size = 256;
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = 512;
+  canvas.height = 128;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
-  ctx.clearRect(0, 0, size, size);
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-  ctx.fillRect(0, 0, size, size);
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 44px Arial';
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(12, 10, 14, 0.9)';
+  ctx.beginPath();
+  ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 30);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(239, 198, 92, .75)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = '#fff3cf';
+  ctx.font = `bold ${text.length > 28 ? 25 : text.length > 17 ? 30 : 38}px Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, size / 2, size / 2);
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(1.7, 0.7, 1);
+  sprite.scale.set(2.25, 0.56, 1);
   return sprite;
 }
 
@@ -1082,10 +1151,13 @@ function updateTurnLabel(sprite, text) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+  ctx.fillStyle = 'rgba(12, 10, 14, 0.92)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 44px Arial';
+  ctx.strokeStyle = 'rgba(239, 198, 92, .75)';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+  ctx.fillStyle = '#fff3cf';
+  ctx.font = `bold ${text.length > 24 ? 27 : text.length > 16 ? 32 : 40}px Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, canvas.width / 2, canvas.height / 2);
@@ -1121,6 +1193,7 @@ export default function GameScene() {
   const faceMapRef = useRef(null);
   const cardBackRef = useRef(null);
   const turnLabelRef = useRef(null);
+  const deckLabelRef = useRef(null);
   const activeRingRef = useRef(null);
   const seatGroupRef = useRef(null);
   const dealerRef = useRef(null);
@@ -1183,12 +1256,12 @@ export default function GameScene() {
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.background = new THREE.Color('#8bc8ea');
-    scene.fog = new THREE.FogExp2('#c9dfeb', 0.0065);
+    scene.background = new THREE.Color('#050918');
+    scene.fog = new THREE.FogExp2('#0b1429', 0.009);
 
-    const camera = new THREE.PerspectiveCamera(56, mount.clientWidth / mount.clientHeight, 0.1, 1000);
-    camera.position.set(0, 7.35, 13.9);
-    camera.lookAt(0, 1.25, 0);
+    const camera = new THREE.PerspectiveCamera(55, mount.clientWidth / mount.clientHeight, 0.1, 1000);
+    camera.position.set(0, 6.05, 10.85);
+    camera.lookAt(0, 1.15, -0.35);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -1199,7 +1272,7 @@ export default function GameScene() {
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.18;
+    renderer.toneMappingExposure = 1.05;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -1208,10 +1281,10 @@ export default function GameScene() {
     pmremGenerator.dispose();
     mount.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight('#fff9ed', 1.15);
-    const hemisphereLight = new THREE.HemisphereLight('#dff3ff', '#d6b06a', 2.2);
-    const directionalLight = new THREE.DirectionalLight('#fff1cf', 3.1);
-    directionalLight.position.set(7, 12, 9);
+    const ambientLight = new THREE.AmbientLight('#fff0d1', 0.58);
+    const hemisphereLight = new THREE.HemisphereLight('#526a91', '#8d5b32', 0.92);
+    const directionalLight = new THREE.DirectionalLight('#ffe2b0', 2.15);
+    directionalLight.position.set(5, 11, 7);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.set(1024, 1024);
     directionalLight.shadow.camera.left = -13;
@@ -1219,8 +1292,8 @@ export default function GameScene() {
     directionalLight.shadow.camera.top = 13;
     directionalLight.shadow.camera.bottom = -13;
     scene.add(ambientLight, hemisphereLight, directionalLight);
-    [[8, 4, 8], [-8, 4, 8], [8, 4, -8], [-8, 4, -8]].forEach((position) => {
-      const fill = new THREE.PointLight('#d9eeff', 7, 15, 2);
+    [[6.5, 4.2, 5.5], [-6.5, 4.2, 5.5]].forEach((position) => {
+      const fill = new THREE.PointLight('#ffc982', 4.2, 13, 2);
       fill.position.set(...position);
       scene.add(fill);
     });
@@ -1240,7 +1313,7 @@ export default function GameScene() {
     drawnCardGroupRef.current = drawnCardGroup;
 
     const handGroup = new THREE.Group();
-    handGroup.position.set(0, 0.91, 3.32);
+    handGroup.position.set(0, 0.95, 3.72);
     scene.add(handGroup);
     handGroupRef.current = handGroup;
 
@@ -1249,11 +1322,12 @@ export default function GameScene() {
     scene.add(pileGroup);
     pileGroupRef.current = pileGroup;
 
-    const drawDeckLabel = createTextSprite('DRAW DECK');
+    const drawDeckLabel = createTextSprite(`DRAW DECK • ${deckCount}`);
     if (drawDeckLabel) {
-      drawDeckLabel.position.set(-1.65, 1.12, -4.0);
-      drawDeckLabel.scale.set(1.35, 0.34, 1);
+      drawDeckLabel.position.set(-1.72, 1.13, -1.48);
+      drawDeckLabel.scale.set(1.72, 0.38, 1);
       scene.add(drawDeckLabel);
+      deckLabelRef.current = drawDeckLabel;
     }
     const discardLabel = createTextSprite('PLAYED CARDS');
     if (discardLabel) {
@@ -1333,8 +1407,8 @@ export default function GameScene() {
     controls.rotateSpeed = 1.18;
     controls.enableDamping = true;
     controls.dampingFactor = 0.055;
-    controls.minDistance = 8.8;
-    controls.maxDistance = 17.5;
+    controls.minDistance = 7.2;
+    controls.maxDistance = 14.2;
     controls.minPolarAngle = Math.PI / 5.2;
     controls.maxPolarAngle = Math.PI / 2.18;
     renderer.domElement.style.touchAction = 'none';
@@ -1389,16 +1463,16 @@ export default function GameScene() {
 
     const setDefaultCamera = () => {
       if (camera.aspect < 0.9) {
-        camera.fov = 72;
-        camera.position.set(0, 9.05, 14.8);
+        camera.fov = 70;
+        camera.position.set(0, 8.3, 13.4);
       } else if (camera.aspect < 1.35) {
-        camera.fov = 63;
-        camera.position.set(0, 8.35, 14.55);
+        camera.fov = 58;
+        camera.position.set(0, 6.8, 11.8);
       } else {
-        camera.fov = 56;
-        camera.position.set(0, 7.55, 13.85);
+        camera.fov = 55;
+        camera.position.set(0, 6.05, 10.85);
       }
-      controls.target.set(0, 1.15, 0);
+      controls.target.set(0, 1.15, -0.35);
       controls.update();
     };
     const resize = () => {
@@ -1693,10 +1767,12 @@ export default function GameScene() {
       } else {
         seatGroup.add(createEmptyLuxuryChair(position));
       }
-      const labelText = player ? `${index + 1}. ${player.name}` : `Seat ${index + 1}`;
+      const seatRole = playerId === clientId ? 'YOU' : `PLAYER ${index + 1}`;
+      const labelText = player ? `${seatRole} • ${player.name} • ${player.handCount ?? 0} CARDS` : `PLAYER ${index + 1} • OPEN SEAT`;
       const label = createTextSprite(labelText);
       if (label) {
-        label.position.set(position[0], 0.5, position[2]);
+        label.position.set(position[0], 2.95, position[2]);
+        label.scale.set(2.35, 0.48, 1);
         seat.add(label);
       }
       seatGroup.add(seat);
@@ -1779,7 +1855,7 @@ export default function GameScene() {
       stackBody.position.y = 0.035 + stackHeight / 2;
       stackBody.castShadow = true;
       const edge = new THREE.MeshStandardMaterial({ color: '#08090c', roughness: 0.42 });
-      const top = new THREE.MeshStandardMaterial({ map: backMap, color: '#ffffff', roughness: 0.48 });
+      const top = new THREE.MeshStandardMaterial({ map: backMap, color: '#17191f', roughness: 0.4, metalness: 0.08 });
       const topCard = new THREE.Mesh(
         new THREE.BoxGeometry(CARD_WIDTH, CARD_THICKNESS, CARD_LENGTH),
         [edge, edge, top, edge, edge, edge]
@@ -1789,6 +1865,7 @@ export default function GameScene() {
       deckGroup.add(stackBody, topCard);
     }
     deckTopRef.current.set(DECK_POSITION.x, DECK_POSITION.y + 0.035 + stackHeight + CARD_THICKNESS, DECK_POSITION.z);
+    if (deckLabelRef.current) updateTurnLabel(deckLabelRef.current, `DRAW DECK • ${visualDeckCount}`);
     if (visualDeckCount > deckCount + 1) shuffleUntilRef.current = performance.now() + 900;
   }, [visualDeckCount, cardAssetsReady, deckCount]);
 
@@ -1903,7 +1980,7 @@ export default function GameScene() {
           });
 
           const count = visibleHand.length;
-          const spacing = count <= 5 ? 0.72 : 0.52;
+          const spacing = count <= 5 ? 0.82 : 0.6;
           const center = (count - 1) / 2;
 
           const target = new THREE.Vector3(
@@ -1913,6 +1990,7 @@ export default function GameScene() {
           );
           mesh.position.copy(target);
           mesh.userData.targetPosition = target;
+          mesh.scale.setScalar(1.22);
 
           mesh.rotation.x = -0.04;
           mesh.rotation.y = (index - center) * 0.045;
