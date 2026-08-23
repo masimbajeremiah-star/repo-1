@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
 import { useGameStore } from '../store/useGameStore';
 import { loadTexture, loadAudio, loadCardFaceMap, createCardFaceTexture, createCardMesh, cardBackTexture, sounds, CARD_WIDTH, CARD_LENGTH, CARD_THICKNESS } from '../assets';
+import { createRiggedPlayerCharacter, disposeRiggedCharacter } from './characters/CharacterManager';
 
 const cardLabels = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const DECK_POSITION = new THREE.Vector3(-1.72, 0.86, -0.58);
@@ -46,6 +47,11 @@ const seatPosition = (index) => SEAT_ANCHORS[Math.max(0, Math.min(index, SEAT_AN
 function disposeGroupChildren(group) {
   if (!group) return;
   [...group.children].forEach((child) => {
+    if (child.userData?.characterMixer) {
+      disposeRiggedCharacter(child);
+      group.remove(child);
+      return;
+    }
     child.traverse((object) => {
       object.geometry?.dispose?.();
       if (Array.isArray(object.material)) object.material.forEach((material) => material.dispose?.());
@@ -1372,12 +1378,33 @@ export default function GameScene() {
     const dealer = createDealerCharacter();
     scene.add(dealer);
     dealerRef.current = dealer;
+    let disposed = false;
+    let riggedDealerCharacter = null;
+    createRiggedPlayerCharacter({
+      player: { id: 'dealer', name: 'Dealer' },
+      position: [DEALER_POSITION.x, DEALER_POSITION.y, DEALER_POSITION.z],
+      seatIndex: 0,
+      dealer: true,
+    }).then((character) => {
+      if (disposed) {
+        disposeRiggedCharacter(character);
+        return;
+      }
+      riggedDealerCharacter = character;
+      scene.add(character);
+      // The procedural dealer remains as an invisible animation rig driving
+      // authoritative deal motion while the rigged GLB owns the visible body.
+      dealer.traverse((object) => {
+        if (object.isMesh || object.isSprite) object.visible = false;
+      });
+    }).catch((error) => {
+      console.warn('Rigged dealer asset unavailable; retaining lightweight fallback.', error);
+    });
 
     let particles;
     let audio;
     let cards = [];
 
-    let disposed = false;
     const setupScene = async () => {
       try {
       particles = createParticles(scene);
@@ -1482,7 +1509,9 @@ export default function GameScene() {
     const clock = new THREE.Clock();
     let animationFrameId;
     const animate = () => {
-      const elapsed = clock.getElapsedTime();
+      const frameDelta = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.elapsedTime;
+      scene.traverse((object) => object.userData?.characterMixer?.update(frameDelta));
       cards.forEach((card, index) => {
         card.position.y = 0.05 + Math.sin(elapsed * 1.2 + index) * 0.02;
       });
@@ -1612,6 +1641,7 @@ export default function GameScene() {
       Object.values(faceMapRef.current || {}).forEach((texture) => texture.dispose?.());
       renderer.dispose();
       environmentTarget.dispose();
+      if (riggedDealerCharacter) disposeRiggedCharacter(riggedDealerCharacter);
       controls.dispose();
       renderer.domElement.removeEventListener('dblclick', resetCamera);
       window.removeEventListener('poker:resetCamera', resetCamera);
@@ -1728,6 +1758,7 @@ export default function GameScene() {
     if (!seatGroup || !activeRing) return;
     disposeGroupChildren(seatGroup);
 
+    let cancelled = false;
     SEAT_ANCHORS.forEach((position, index) => {
       const playerId = visualSeatOrder[index];
       const seat = createSeatMarker(position);
@@ -1735,7 +1766,19 @@ export default function GameScene() {
       // Keep the foreground clear: the local hand has priority over showing a
       // body at the camera seat. Remote players remain visible beyond the felt.
       if (player && playerId !== clientId) {
-        seatGroup.add(createPlayerBust(player, position));
+        const fallback = createPlayerBust(player, position);
+        seatGroup.add(fallback);
+        createRiggedPlayerCharacter({ player, position, seatIndex: index }).then((riggedCharacter) => {
+          if (cancelled || !seatGroup.parent) {
+            disposeRiggedCharacter(riggedCharacter);
+            return;
+          }
+          seatGroup.remove(fallback);
+          disposeGroupChildren(fallback);
+          seatGroup.add(riggedCharacter);
+        }).catch((error) => {
+          console.warn('Rigged player asset unavailable; retaining lightweight fallback.', error);
+        });
       }
       const seatRole = playerId === clientId ? 'YOU' : `PLAYER ${index + 1}`;
       const labelText = player ? `${seatRole} • ${player.name} • ${player.handCount ?? 0} CARDS` : `PLAYER ${index + 1} • OPEN SEAT`;
@@ -1794,7 +1837,11 @@ export default function GameScene() {
     addOpponentCards();
 
     updateActiveRing(activeRing, visualSeatOrder, activePlayerId);
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      cancelled = true;
+      seatGroup.children.filter((child) => child.userData?.characterMixer).forEach(disposeRiggedCharacter);
+    };
   }, [players, turnOrder, visualSeatOrder, activePlayerId, clientId, cardAssetsReady, visualHandCounts]);
 
   useEffect(() => {
