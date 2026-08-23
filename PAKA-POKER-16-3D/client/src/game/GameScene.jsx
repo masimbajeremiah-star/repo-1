@@ -29,6 +29,9 @@ const KADI_RAISE_MS = 300;
 const KADI_HOLD_MS = 2000;
 const KADI_LOWER_MS = 300;
 const KADI_TOTAL_MS = KADI_RAISE_MS + KADI_HOLD_MS + KADI_LOWER_MS;
+// The live gameplay scene uses the real optimized penthouse geometry. This is
+// presentation-only: all cards, seats and dealer motion still derive from the
+// server-authoritative store below.
 const USE_PENTHOUSE_PRESENTATION = false;
 const CELEBRATION_MS = 7500;
 const SEAT_ANCHORS = [
@@ -166,7 +169,7 @@ function createTable(scene, woodTexture) {
     emblemContext.fillText('PAKA', 256, 92);
     emblemContext.font = '700 25px Arial';
     emblemContext.letterSpacing = '8px';
-    emblemContext.fillText('POKER 16', 256, 137);
+    emblemContext.fillText('POWER • PLAY • CONNECT • COMPETE', 256, 137);
     const emblemTexture = new THREE.CanvasTexture(emblemCanvas);
     emblemTexture.colorSpace = THREE.SRGBColorSpace;
     const emblem = new THREE.Mesh(
@@ -357,6 +360,39 @@ function createGameplayBackdrop(scene) {
   backWall.position.set(0, 3.6, -2.4);
   backWall.rotation.y = Math.PI * 0.08;
   group.add(backWall);
+
+  // A restrained skyline wall supplies the approved nighttime-luxury context
+  // without competing with the table or adding the old oversized room shell.
+  const cityTexture = createCityWindowTexture();
+  const cityMaterial = new THREE.MeshStandardMaterial({
+    map: cityTexture,
+    emissiveMap: cityTexture,
+    emissive: '#9d6a34',
+    emissiveIntensity: 0.72,
+    color: '#25324b',
+    roughness: 0.76,
+  });
+  for (let index = 0; index < 11; index += 1) {
+    const angle = -0.76 + index * 0.152;
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 7.7), cityMaterial);
+    panel.position.set(Math.sin(angle) * 13.1, 3.15, -Math.cos(angle) * 13.1);
+    panel.rotation.y = -angle;
+    group.add(panel);
+
+    const mullion = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 8.15, 0.12),
+      new THREE.MeshStandardMaterial({ color: '#9a6a22', metalness: 0.9, roughness: 0.22 })
+    );
+    mullion.position.set(Math.sin(angle - 0.073) * 12.98, 3.15, -Math.cos(angle - 0.073) * 12.98);
+    mullion.rotation.y = -angle;
+    group.add(mullion);
+  }
+
+  [-7.1, 7.1].forEach((x) => {
+    const lamp = new THREE.PointLight('#ffbd6b', 5.5, 9.5, 2);
+    lamp.position.set(x, 2.8, -4.3);
+    group.add(lamp);
+  });
 
   const tableHalo = new THREE.Mesh(
     new THREE.RingGeometry(6.1, 8.8, 96),
@@ -1164,7 +1200,6 @@ export default function GameScene() {
   const turnOrder = useGameStore((state) => state.turnOrder);
   const activePlayerId = useGameStore((state) => state.activePlayerId);
   const clientId = useGameStore((state) => state.clientId);
-  const adminHands = useGameStore((state) => state.adminHands);
   const kadiEvent = useGameStore((state) => state.kadiEvent);
   const demoStatus = useGameStore((state) => state.demoStatus);
   const celebrationEvent = useGameStore((state) => state.celebrationEvent);
@@ -1248,8 +1283,8 @@ export default function GameScene() {
     scene.fog = new THREE.FogExp2('#050507', 0.014);
 
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 1000);
-    camera.position.set(0, 5.35, 10.25);
-    camera.lookAt(0, 0.92, -0.55);
+    camera.position.set(0, 6.6, 11.75);
+    camera.lookAt(0, 0.72, -0.65);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({
@@ -1409,10 +1444,10 @@ export default function GameScene() {
         camera.fov = 56;
         camera.position.set(0, 6.35, 11.2);
       } else {
-        camera.fov = 50;
-        camera.position.set(0, 5.35, 10.25);
+        camera.fov = 48;
+        camera.position.set(0, 6.6, 11.75);
       }
-      controls.target.set(0, 0.92, -0.55);
+      controls.target.set(0, 0.72, -0.65);
       controls.update();
     };
     const resize = () => {
@@ -1693,24 +1728,13 @@ export default function GameScene() {
     if (!seatGroup || !activeRing) return;
     disposeGroupChildren(seatGroup);
 
-    // Add a privacy divider at the boundary between neighbouring players.
-    // These prevent one player's playing area from visually merging into
-    // the next player's area.
-    if (turnOrder.length > 1) {
-      for (let index = 0; index < SEAT_ANCHORS.length; index += 1) {
-        const boundaryAngle =
-          ((index + 0.5) / SEAT_ANCHORS.length) * Math.PI * 2;
-
-        const barrier = createPlayerBarrier(boundaryAngle);
-        seatGroup.add(barrier);
-      }
-    }
-
     SEAT_ANCHORS.forEach((position, index) => {
       const playerId = visualSeatOrder[index];
       const seat = createSeatMarker(position);
       const player = players.find((p) => p.id === playerId);
-      if (player) {
+      // Keep the foreground clear: the local hand has priority over showing a
+      // body at the camera seat. Remote players remain visible beyond the felt.
+      if (player && playerId !== clientId) {
         seatGroup.add(createPlayerBust(player, position));
       }
       const seatRole = playerId === clientId ? 'YOU' : `PLAYER ${index + 1}`;
@@ -1748,11 +1772,9 @@ export default function GameScene() {
         const targetX = (playerSeat[0] / length) * 4.45;
         const targetZ = (playerSeat[2] / length) * 4.45;
         for (let cardIndex = 0; cardIndex < visibleCount; cardIndex += 1) {
-          const adminCard = adminHands[playerId]?.[cardIndex];
-          const visibleFace = adminCard
-            ? createCardFaceTexture(adminCard.rank || String(adminCard.value), adminCard.suit)
-            : backTexture;
-          const card = await createCardMesh({ frontTexture: visibleFace, backTexture });
+          // Opponent identity is intentionally limited to public hand counts.
+          // Their face values never enter this render path.
+          const card = await createCardMesh({ frontTexture: backTexture, backTexture });
           card.scale.set(1, 1, 1);
           card.rotation.y = Math.atan2(targetX, targetZ) + (cardIndex - (visibleCount - 1) / 2) * 0.055;
           const target = new THREE.Vector3(
@@ -1773,7 +1795,7 @@ export default function GameScene() {
 
     updateActiveRing(activeRing, visualSeatOrder, activePlayerId);
     return () => { mounted = false; };
-  }, [players, turnOrder, visualSeatOrder, activePlayerId, clientId, cardAssetsReady, adminHands, visualHandCounts]);
+  }, [players, turnOrder, visualSeatOrder, activePlayerId, clientId, cardAssetsReady, visualHandCounts]);
 
   useEffect(() => {
     if (!kadiEvent || !seatGroupRef.current) return;
@@ -1912,5 +1934,5 @@ export default function GameScene() {
     disposeGroupChildren(drawnCardGroup);
   }, [lastDrawnCard, cardAssetsReady]);
 
-  return <div ref={mountRef} className="three-scene" data-scene-version="luxury-penthouse-2026" aria-label="PAKA Poker luxury penthouse game table" />;
+  return <div ref={mountRef} className="three-scene" data-scene-version="paka-power-penthouse-2026" aria-label="PAKA Power luxury Nairobi penthouse game table" />;
 }

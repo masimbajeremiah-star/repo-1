@@ -36,26 +36,29 @@ export function LocalHandOverlay({ hand, canPlay, onPlay }) {
   const center = (count - 1) / 2;
   return (
     <div className="local-hand-overlay" data-local-hand-count={count} aria-label={`Your hand, ${count} cards`}>
-      {hand.map((card, index) => {
-        const offset = index - center;
-        return (
-          <CardFace
-            key={card.id}
-            card={card}
-            className="local-screen-card"
-            disabled={!canPlay}
-            onClick={() => onPlay(card)}
-            label={`${displayRank(card)} of ${card.suit}. ${canPlay ? 'Play card' : 'Wait for your turn'}`}
-            style={{
-              '--card-index': index,
-              '--card-count': count,
-              '--card-offset': offset,
-              transform: `translateX(${offset * -13}px) translateY(${Math.abs(offset) * 5}px) rotate(${offset * 4}deg)`,
-              zIndex: index + 1,
-            }}
-          />
-        );
-      })}
+      <div className="local-hand-label" aria-hidden="true">YOU • {count} {count === 1 ? 'CARD' : 'CARDS'}</div>
+      <div className="local-hand-cards">
+        {hand.map((card, index) => {
+          const offset = index - center;
+          return (
+            <CardFace
+              key={card.id}
+              card={card}
+              className="local-screen-card"
+              disabled={!canPlay}
+              onClick={() => onPlay(card)}
+              label={`${displayRank(card)} of ${card.suit}. ${canPlay ? 'Play card' : 'Wait for your turn'}`}
+              style={{
+                '--card-index': index,
+                '--card-count': count,
+                '--card-offset': offset,
+                transform: `translateX(${offset * -10}px) translateY(${Math.abs(offset) * 4}px) rotate(${offset * 4}deg)`,
+                zIndex: index + 1,
+              }}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
