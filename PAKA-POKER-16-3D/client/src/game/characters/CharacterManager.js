@@ -29,7 +29,7 @@ function createDistantSilhouette(color) {
   return group;
 }
 
-export async function createRiggedPlayerCharacter({ player, position, seatIndex, dealer = false }) {
+export async function createRiggedPlayerCharacter({ player, position, seatIndex, dealer = false, active = false }) {
   const gltf = await loadCharacterTemplate();
   const root = new THREE.Group();
   root.name = dealer ? 'rigged-dealer-character' : `player-model-${player?.id || seatIndex}`;
@@ -45,8 +45,40 @@ export async function createRiggedPlayerCharacter({ player, position, seatIndex,
     if (!object.material) return;
     object.material = object.material.clone();
     object.material.roughness = Math.max(0.58, object.material.roughness ?? 0.7);
-    if (!dealer) object.material.color.lerp(new THREE.Color(playerPalette[seatIndex % playerPalette.length]), 0.36);
+    const wardrobeColor = dealer ? '#2b111a' : playerPalette[seatIndex % playerPalette.length];
+    object.material.color.lerp(new THREE.Color(wardrobeColor), dealer ? 0.48 : 0.36);
+    if (active) {
+      object.material.emissive = new THREE.Color('#8a5a18');
+      object.material.emissiveIntensity = 0.12;
+    }
   });
+
+  const wardrobe = new THREE.Group();
+  wardrobe.name = dealer ? 'dealer-uniform-details' : `player-${seatIndex}-wardrobe-details`;
+  const cloth = new THREE.MeshStandardMaterial({
+    color: dealer ? '#3a1320' : playerPalette[seatIndex % playerPalette.length],
+    roughness: 0.74,
+  });
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.035, 7, 22, Math.PI), cloth);
+  collar.position.set(0, 1.47, 0.23);
+  collar.rotation.x = Math.PI / 2;
+  wardrobe.add(collar);
+  if (dealer) {
+    const shirt = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.78), new THREE.MeshStandardMaterial({ color: '#eee9dc', roughness: 0.82 }));
+    shirt.position.set(0, 1.02, 0.37);
+    const bow = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), new THREE.MeshStandardMaterial({ color: '#111113', roughness: 0.6 }));
+    bow.scale.set(1.7, 0.55, 0.55);
+    bow.position.set(0, 1.43, 0.4);
+    wardrobe.add(shirt, bow);
+  }
+  const hair = new THREE.Mesh(
+    seatIndex % 2 === 0 ? new THREE.SphereGeometry(0.31, 14, 9, 0, Math.PI * 2, 0, Math.PI * 0.54) : new THREE.CapsuleGeometry(0.22, 0.26, 5, 10),
+    new THREE.MeshStandardMaterial({ color: seatIndex % 3 === 0 ? '#17110e' : '#2a1b14', roughness: 0.95 })
+  );
+  hair.position.set(0, 2.72, seatIndex % 2 ? -0.1 : 0);
+  if (seatIndex % 2) hair.rotation.z = Math.PI / 2;
+  wardrobe.add(hair);
+  rigged.add(wardrobe);
   lod.addLevel(rigged, 0);
   lod.addLevel(createDistantSilhouette(dealer ? '#3b1622' : playerPalette[seatIndex % playerPalette.length]), 13);
   root.add(lod);
@@ -64,6 +96,31 @@ export async function createRiggedPlayerCharacter({ player, position, seatIndex,
   root.userData.characterMixer = mixer;
   root.userData.characterAsset = CHARACTER_URL;
   root.userData.lodDistances = [0, 13];
+  root.userData.isActivePlayer = active;
+  const hips = rigged.getObjectByName('Hips');
+  const spine = rigged.getObjectByName('Spine');
+  const leftUpLeg = rigged.getObjectByName('LeftUpLeg');
+  const rightUpLeg = rigged.getObjectByName('RightUpLeg');
+  const leftLeg = rigged.getObjectByName('LeftLeg');
+  const rightLeg = rigged.getObjectByName('RightLeg');
+  const leftArm = rigged.getObjectByName('LeftArm');
+  const leftForeArm = rigged.getObjectByName('LeftForeArm');
+  root.userData.applyCharacterPose = (time) => {
+    if (dealer) {
+      if (spine) spine.rotation.x = -0.04 + Math.sin(time * 0.7) * 0.012;
+      root.position.y = position[1] + Math.sin(time * 0.72) * 0.01;
+      return;
+    }
+    if (hips) hips.rotation.x = -0.13;
+    if (spine) spine.rotation.x = active ? -0.14 : -0.07;
+    if (leftUpLeg) leftUpLeg.rotation.x = -1.02;
+    if (rightUpLeg) rightUpLeg.rotation.x = -1.02;
+    if (leftLeg) leftLeg.rotation.x = 1.45;
+    if (rightLeg) rightLeg.rotation.x = 1.45;
+    if (leftArm) leftArm.rotation.z = 0.48;
+    if (leftForeArm) leftForeArm.rotation.x = -0.82;
+    root.position.y = position[1] + Math.sin(time * 0.82 + seatIndex) * 0.012;
+  };
   const rightArm = rigged.getObjectByName('RightArm');
   const rightForeArm = rigged.getObjectByName('RightForeArm');
   const rightHand = rigged.getObjectByName('RightHand');

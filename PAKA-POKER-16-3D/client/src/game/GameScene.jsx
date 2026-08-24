@@ -1511,7 +1511,10 @@ export default function GameScene() {
     const animate = () => {
       const frameDelta = Math.min(clock.getDelta(), 0.05);
       const elapsed = clock.elapsedTime;
-      scene.traverse((object) => object.userData?.characterMixer?.update(frameDelta));
+      scene.traverse((object) => {
+        object.userData?.characterMixer?.update(frameDelta);
+        object.userData?.applyCharacterPose?.(elapsed);
+      });
       cards.forEach((card, index) => {
         card.position.y = 0.05 + Math.sin(elapsed * 1.2 + index) * 0.02;
       });
@@ -1768,7 +1771,12 @@ export default function GameScene() {
       if (player && playerId !== clientId) {
         const fallback = createPlayerBust(player, position);
         seatGroup.add(fallback);
-        createRiggedPlayerCharacter({ player, position, seatIndex: index }).then((riggedCharacter) => {
+        createRiggedPlayerCharacter({
+          player,
+          position,
+          seatIndex: index,
+          active: playerId === activePlayerId,
+        }).then((riggedCharacter) => {
           if (cancelled || !seatGroup.parent) {
             disposeRiggedCharacter(riggedCharacter);
             return;
