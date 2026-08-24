@@ -347,11 +347,13 @@ function createPenthouse(scene) {
 function createGameplayBackdrop(scene) {
   const group = new THREE.Group();
   group.name = 'approved-gameplay-only-backdrop';
+  const marbleTexture = createMarbleTexture();
   const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(15, 96),
+    new THREE.CircleGeometry(17.5, 128),
     new THREE.MeshPhysicalMaterial({
-      color: '#070708', roughness: 0.42, metalness: 0.12,
-      clearcoat: 0.36, clearcoatRoughness: 0.3,
+      map: marbleTexture,
+      color: '#f4f1e8', roughness: 0.2, metalness: 0.04,
+      clearcoat: 0.72, clearcoatRoughness: 0.16,
     })
   );
   floor.rotation.x = -Math.PI / 2;
@@ -367,16 +369,16 @@ function createGameplayBackdrop(scene) {
   backWall.rotation.y = Math.PI * 0.08;
   group.add(backWall);
 
-  // A restrained skyline wall supplies the approved nighttime-luxury context
-  // without competing with the table or adding the old oversized room shell.
+  // High-contrast windows and distinct tower silhouettes keep the city legible
+  // behind the players instead of collapsing into a vague dark wall.
   const cityTexture = createCityWindowTexture();
   const cityMaterial = new THREE.MeshStandardMaterial({
     map: cityTexture,
     emissiveMap: cityTexture,
-    emissive: '#9d6a34',
-    emissiveIntensity: 0.72,
-    color: '#25324b',
-    roughness: 0.76,
+    emissive: '#d9a34b',
+    emissiveIntensity: 1.3,
+    color: '#607da7',
+    roughness: 0.62,
   });
   for (let index = 0; index < 11; index += 1) {
     const angle = -0.76 + index * 0.152;
@@ -393,6 +395,33 @@ function createGameplayBackdrop(scene) {
     mullion.rotation.y = -angle;
     group.add(mullion);
   }
+
+  const towerMaterial = new THREE.MeshStandardMaterial({
+    map: cityTexture,
+    emissiveMap: cityTexture,
+    emissive: '#d39a42',
+    emissiveIntensity: 1.05,
+    color: '#314968',
+    roughness: 0.7,
+  });
+  [-10.6, -8.4, -5.9, -3.2, 3.4, 6.1, 8.7, 10.8].forEach((x, index) => {
+    const height = 5.4 + (index % 4) * 1.15;
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(1.35 + (index % 2) * 0.38, height, 0.8), towerMaterial);
+    tower.position.set(x, -0.8 + height / 2, -11.3 - (index % 3) * 0.45);
+    tower.castShadow = false;
+    group.add(tower);
+  });
+
+  // Gold floor inlays make the pale marble read as an intentional luxury floor.
+  [9.3, 12.8].forEach((radius) => {
+    const inlay = new THREE.Mesh(
+      new THREE.RingGeometry(radius, radius + 0.055, 128),
+      new THREE.MeshStandardMaterial({ color: '#c99632', metalness: 0.9, roughness: 0.2, side: THREE.DoubleSide })
+    );
+    inlay.rotation.x = -Math.PI / 2;
+    inlay.position.y = -1.365;
+    group.add(inlay);
+  });
 
   [-7.1, 7.1].forEach((x) => {
     const lamp = new THREE.PointLight('#ffbd6b', 5.5, 9.5, 2);
@@ -1285,8 +1314,8 @@ export default function GameScene() {
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.background = new THREE.Color('#020203');
-    scene.fog = new THREE.FogExp2('#050507', 0.014);
+    scene.background = new THREE.Color('#020817');
+    scene.fog = new THREE.FogExp2('#07101f', 0.0035);
 
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 1000);
     camera.position.set(0, 6.6, 11.75);
@@ -1768,14 +1797,18 @@ export default function GameScene() {
       const player = players.find((p) => p.id === playerId);
       // Keep the foreground clear: the local hand has priority over showing a
       // body at the camera seat. Remote players remain visible beyond the felt.
-      if (player && playerId !== clientId) {
-        const fallback = createPlayerBust(player, position);
+      const visualOccupant = !player && index > 0
+        ? { id: `visual-seat-${index}`, name: 'Visual guest', handCount: 0 }
+        : null;
+      const visiblePerson = player || visualOccupant;
+      if (visiblePerson && playerId !== clientId) {
+        const fallback = createPlayerBust(visiblePerson, position);
         seatGroup.add(fallback);
         createRiggedPlayerCharacter({
-          player,
+          player: visiblePerson,
           position,
           seatIndex: index,
-          active: playerId === activePlayerId,
+          active: Boolean(player && playerId === activePlayerId),
         }).then((riggedCharacter) => {
           if (cancelled || !seatGroup.parent) {
             disposeRiggedCharacter(riggedCharacter);
@@ -1789,7 +1822,11 @@ export default function GameScene() {
         });
       }
       const seatRole = playerId === clientId ? 'YOU' : `PLAYER ${index + 1}`;
-      const labelText = player ? `${seatRole} • ${player.name} • ${player.handCount ?? 0} CARDS` : `PLAYER ${index + 1} • OPEN SEAT`;
+      const labelText = player
+        ? `${seatRole} • ${player.name} • ${player.handCount ?? 0} CARDS`
+        : visualOccupant
+          ? `PLAYER ${index + 1} • OPEN SEAT • VISUAL GUEST`
+          : `PLAYER ${index + 1} • OPEN SEAT`;
       const label = createTextSprite(labelText);
       if (label) {
         label.position.set(position[0], 2.95, position[2]);
