@@ -1,0 +1,7 @@
+{
+  "type": "group",
+  "children": [
+    { "type": "cylinder", "radiusTop": 6.5, "radiusBottom": 6.5, "height": 0.4, "radialSegments": 64, "material": { "color": "#0f172a", "metalness": 0.4, "roughness": 0.35 }, "position": [0, 0.2, 0] },
+    { "type": "torus", "radius": 7.2, "tube": 0.2, "radialSegments": 32, "tubularSegments": 16, "material": { "color": "#fbbf24", "metalness": 0.8, "roughness": 0.2 }, "rotation": [Math.PI / 2, 0, 0], "position": [0, 0.4, 0] }
+  ]
+}

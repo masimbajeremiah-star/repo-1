@@ -1,0 +1,45 @@
+{
+  "type": "group",
+  "name": "cardDeck",
+  "children": [
+    {
+      "type": "group",
+      "name": "stack",
+      "position": [0, 0.06, 0],
+      "children": [
+        {
+          "type": "box",
+          "name": "bottomCard",
+          "width": 1.4,
+          "height": 0.02,
+          "depth": 2.2,
+          "material": {
+            "color": "#0f172a",
+            "metalness": 0.04,
+            "roughness": 0.46
+          }
+        },
+        {
+          "type": "group",
+          "name": "cardSpread",
+          "position": [0, 0.02, 0],
+          "children": [
+            {
+              "type": "box",
+              "name": "faceCard",
+              "width": 1.4,
+              "height": 0.02,
+              "depth": 2.2,
+              "rotation": [0, 0, 0.05],
+              "material": {
+                "color": "#f8fafc",
+                "metalness": 0.08,
+                "roughness": 0.3
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
