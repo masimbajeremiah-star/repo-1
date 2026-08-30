@@ -277,6 +277,13 @@ button {
   touch-action: none;
 }
 
+.scene-panel .three-scene.photoreal-game-scene {
+  background-color: #080604;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .local-hand-overlay {
   position: absolute;
   z-index: 55;

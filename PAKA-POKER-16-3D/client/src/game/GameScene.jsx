@@ -34,6 +34,8 @@ const KADI_TOTAL_MS = KADI_RAISE_MS + KADI_HOLD_MS + KADI_LOWER_MS;
 // presentation-only: all cards, seats and dealer motion still derive from the
 // server-authoritative store below.
 const USE_PENTHOUSE_PRESENTATION = false;
+const USE_PHOTOREAL_BACKGROUND = true;
+const PHOTOREAL_BACKGROUND_URL = `${String(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/assets/environment/paka-photoreal-table-v1.png`;
 const CELEBRATION_MS = 7500;
 const SEAT_ANCHORS = [
   [0, 0.13, 5.82],
@@ -1327,7 +1329,7 @@ export default function GameScene() {
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.background = new THREE.Color('#020817');
+    scene.background = USE_PHOTOREAL_BACKGROUND ? null : new THREE.Color('#020817');
     // The approved skyline must stay crisp; distance is communicated through
     // tower scale and color rather than atmospheric blur.
     scene.fog = null;
@@ -1344,6 +1346,7 @@ export default function GameScene() {
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
+    renderer.setClearColor(0x000000, USE_PHOTOREAL_BACKGROUND ? 0 : 1);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.18;
@@ -1380,13 +1383,16 @@ export default function GameScene() {
       scene.add(portraitLight, portraitLight.target);
     });
 
-    if (USE_PENTHOUSE_PRESENTATION) {
+    if (USE_PHOTOREAL_BACKGROUND) {
+      // Lounge, table, seated guests and dealer are supplied by the approved
+      // photographic environment; WebGL renders only live game objects.
+    } else if (USE_PENTHOUSE_PRESENTATION) {
       createPenthouse(scene);
       createChandelier(scene);
     } else {
       createGameplayBackdrop(scene);
     }
-    createTable(scene, null);
+    if (!USE_PHOTOREAL_BACKGROUND) createTable(scene, null);
 
     const deckGroup = new THREE.Group();
     deckGroup.position.copy(DECK_POSITION);
@@ -1428,11 +1434,12 @@ export default function GameScene() {
     // Dedicated visual-only DealerCharacter. It is intentionally created outside
     // every players/turnOrder render path and owns no gameplay identity or hand.
     const dealer = createDealerCharacter();
+    dealer.visible = !USE_PHOTOREAL_BACKGROUND;
     scene.add(dealer);
     dealerRef.current = dealer;
     let disposed = false;
     let riggedDealerCharacter = null;
-    createRiggedPlayerCharacter({
+    if (!USE_PHOTOREAL_BACKGROUND) createRiggedPlayerCharacter({
       player: { id: 'dealer', name: 'Dealer' },
       position: [DEALER_POSITION.x, DEALER_POSITION.y, DEALER_POSITION.z],
       seatIndex: 0,
@@ -1819,12 +1826,12 @@ export default function GameScene() {
     let cancelled = false;
     SEAT_ANCHORS.forEach((position, index) => {
       const playerId = visualSeatOrder[index];
-      const seat = createSeatMarker(position);
+      const seat = USE_PHOTOREAL_BACKGROUND ? new THREE.Group() : createSeatMarker(position);
       const player = players.find((p) => p.id === playerId);
       // Keep the foreground clear: the local hand has priority over showing a
       // body at the camera seat. Remote players remain visible beyond the felt.
       const visiblePerson = player || null;
-      if (visiblePerson) {
+      if (!USE_PHOTOREAL_BACKGROUND && visiblePerson) {
         const fallback = createPlayerBust(visiblePerson, position);
         seatGroup.add(fallback);
         createRiggedPlayerCharacter({
@@ -2047,5 +2054,13 @@ export default function GameScene() {
     disposeGroupChildren(drawnCardGroup);
   }, [lastDrawnCard, cardAssetsReady]);
 
-  return <div ref={mountRef} className="three-scene" data-scene-version="paka-realistic-lounge-2026" aria-label="PAKA Poker realistic luxury lounge game table" />;
+  return (
+    <div
+      ref={mountRef}
+      className={`three-scene ${USE_PHOTOREAL_BACKGROUND ? 'photoreal-game-scene' : ''}`}
+      style={USE_PHOTOREAL_BACKGROUND ? { backgroundImage: `url(${PHOTOREAL_BACKGROUND_URL})` } : undefined}
+      data-scene-version="paka-photoreal-lounge-2026"
+      aria-label="PAKA Poker photorealistic luxury skyline game table"
+    />
+  );
 }
