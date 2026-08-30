@@ -31,13 +31,38 @@ function CardFace({ card, className = '', style, disabled = false, onClick, labe
   );
 }
 
+function WaitingCard({ className = '', style, label = 'Card waiting to be dealt' }) {
+  return (
+    <span className={`screen-card waiting-card ${className}`} style={style} aria-label={label} role="img">
+      <span className="waiting-card-pattern" aria-hidden="true">♠</span>
+    </span>
+  );
+}
+
 export function LocalHandOverlay({ hand, canPlay, onPlay }) {
   const count = hand.length;
+  const waitingForDeal = count === 0;
   const center = (count - 1) / 2;
   return (
     <div className="local-hand-overlay" data-local-hand-count={count} aria-label={`Your hand, ${count} cards`}>
-      <div className="local-hand-label" aria-hidden="true">YOU • {count} {count === 1 ? 'CARD' : 'CARDS'}</div>
+      <div className="local-hand-label" aria-hidden="true">
+        {waitingForDeal ? 'YOU • 4 CARDS DEAL WHEN ROUND STARTS' : `YOU • ${count} ${count === 1 ? 'CARD' : 'CARDS'}`}
+      </div>
       <div className="local-hand-cards">
+        {waitingForDeal && [0, 1, 2, 3].map((index) => {
+          const offset = index - 1.5;
+          return (
+            <WaitingCard
+              key={`waiting-hand-${index}`}
+              className="local-screen-card"
+              label={`Waiting hand card ${index + 1} of 4`}
+              style={{
+                transform: `translateX(${offset * -10}px) translateY(${Math.abs(offset) * 4}px) rotate(${offset * 4}deg)`,
+                zIndex: index + 1,
+              }}
+            />
+          );
+        })}
         {hand.map((card, index) => {
           const offset = index - center;
           return (
@@ -64,10 +89,12 @@ export function LocalHandOverlay({ hand, canPlay, onPlay }) {
 }
 
 export function PlayedCardOverlay({ card }) {
-  if (!card) return null;
   return (
-    <div className="played-card-overlay" data-played-card-id={card.id} aria-label="Current played card">
-      <CardFace card={card} className="played-screen-card" disabled label={`Current played card: ${displayRank(card)} of ${card.suit}`} />
+    <div className="played-card-overlay" data-played-card-id={card?.id || 'waiting'} aria-label={card ? 'Current played card' : 'Waiting for starting card'}>
+      <div className="played-card-label" aria-hidden="true">{card ? 'PLAYED CARD' : 'STARTING CARD'}</div>
+      {card
+        ? <CardFace card={card} className="played-screen-card" disabled label={`Current played card: ${displayRank(card)} of ${card.suit}`} />
+        : <WaitingCard className="played-screen-card" label="Starting card waiting to be dealt" />}
     </div>
   );
 }

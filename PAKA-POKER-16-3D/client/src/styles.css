@@ -332,6 +332,29 @@ button {
   opacity: 1;
 }
 
+.waiting-card {
+  display: grid;
+  place-items: center;
+  border-color: #d8bd70;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.08) 25%, transparent 25%) 0 0 / 12px 12px,
+    linear-gradient(315deg, rgba(255,255,255,.08) 25%, transparent 25%) 0 0 / 12px 12px,
+    radial-gradient(circle at center, #4b1322, #170b10 72%);
+  box-shadow: 0 10px 24px rgba(0,0,0,.62), inset 0 0 0 4px #251017, inset 0 0 0 5px rgba(222,182,83,.55);
+}
+
+.waiting-card-pattern {
+  display: grid;
+  place-items: center;
+  width: 58%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(236,199,103,.65);
+  border-radius: 50%;
+  color: #e3b955;
+  font-size: clamp(1.5rem, 3vw, 2.7rem);
+  text-shadow: 0 2px 8px #000;
+}
+
 .local-screen-card {
   pointer-events: auto;
   cursor: pointer;
@@ -365,6 +388,21 @@ button {
   top: 47%;
   transform: translate(-50%, -50%) rotate(2deg);
   pointer-events: none;
+  display: grid;
+  justify-items: center;
+}
+
+.played-card-label {
+  margin-bottom: 8px;
+  padding: 5px 13px;
+  border: 1px solid rgba(255,222,142,.62);
+  border-radius: 8px;
+  background: rgba(20,10,13,.92);
+  color: #fff4d2;
+  box-shadow: 0 8px 20px rgba(0,0,0,.35);
+  font-size: .62rem;
+  font-weight: 900;
+  letter-spacing: .08em;
 }
 
 .played-screen-card {
