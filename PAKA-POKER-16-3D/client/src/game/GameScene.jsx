@@ -37,7 +37,6 @@ const USE_PENTHOUSE_PRESENTATION = false;
 const USE_PHOTOREAL_BACKGROUND = true;
 const ASSET_BASE_URL = String(import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 const PHOTOREAL_BACKGROUND_URL = `${ASSET_BASE_URL}/assets/environment/paka-photoreal-lounge-empty-v1.png`;
-const PHOTOREAL_PEOPLE_URL = `${ASSET_BASE_URL}/assets/environment/paka-photoreal-table-v1.png`;
 const CELEBRATION_MS = 7500;
 const SEAT_ANCHORS = [
   [0, 0.13, 5.82],
@@ -1336,19 +1335,6 @@ export default function GameScene() {
     // tower scale and color rather than atmospheric blur.
     scene.fog = null;
 
-    let peopleMotionLayer = null;
-    if (USE_PHOTOREAL_BACKGROUND) {
-      peopleMotionLayer = document.createElement('div');
-      peopleMotionLayer.className = 'photoreal-people-motion-layer';
-      ['left', 'upper-left', 'dealer', 'upper-right', 'right'].forEach((seat, index) => {
-        const person = document.createElement('span');
-        person.className = `photoreal-person photoreal-person-${seat}`;
-        person.style.backgroundImage = `url(${PHOTOREAL_PEOPLE_URL})`;
-        person.style.animationDelay = `${index * -0.83}s`;
-        peopleMotionLayer.appendChild(person);
-      });
-      mount.appendChild(peopleMotionLayer);
-    }
 
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 1000);
     camera.position.set(0, 6.6, 11.75);
@@ -1450,12 +1436,12 @@ export default function GameScene() {
     // Dedicated visual-only DealerCharacter. It is intentionally created outside
     // every players/turnOrder render path and owns no gameplay identity or hand.
     const dealer = createDealerCharacter();
-    dealer.visible = !USE_PHOTOREAL_BACKGROUND;
+    dealer.visible = false;
     scene.add(dealer);
     dealerRef.current = dealer;
     let disposed = false;
     let riggedDealerCharacter = null;
-    if (!USE_PHOTOREAL_BACKGROUND) createRiggedPlayerCharacter({
+    createRiggedPlayerCharacter({
       player: { id: 'dealer', name: 'Dealer' },
       position: [DEALER_POSITION.x, DEALER_POSITION.y, DEALER_POSITION.z],
       seatIndex: 0,
@@ -1712,7 +1698,6 @@ export default function GameScene() {
         audio.pause();
         audio.src = '';
       }
-      peopleMotionLayer?.remove();
       mount.removeChild(renderer.domElement);
       scene.traverse((object) => {
         object.geometry?.dispose?.();
@@ -1847,8 +1832,8 @@ export default function GameScene() {
       const player = players.find((p) => p.id === playerId);
       // Keep the foreground clear: the local hand has priority over showing a
       // body at the camera seat. Remote players remain visible beyond the felt.
-      const visiblePerson = player || null;
-      if (!USE_PHOTOREAL_BACKGROUND && visiblePerson) {
+      const visiblePerson = player || (index > 0 ? { id: `visual-opponent-${index}`, name: 'Opponent', handCount: 0 } : null);
+      if (visiblePerson && playerId !== clientId) {
         const fallback = createPlayerBust(visiblePerson, position);
         seatGroup.add(fallback);
         createRiggedPlayerCharacter({
