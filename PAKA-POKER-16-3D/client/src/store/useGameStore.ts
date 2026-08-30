@@ -21,7 +21,6 @@ type ClientState = {
   winnerId: string | null;
   gameOver: boolean;
   actionMessage: string;
-  adminHands: Record<string, Card[]>;
   kadiEvent: { playerId: string; playerName: string; nonce: number } | null;
   demoStatus: { running: boolean; stage: string; message: string };
   celebrationEvent: { winnerId: string; winnerName: string; nonce: number } | null;
@@ -45,7 +44,6 @@ type ClientState = {
   addCardToHand: (card: Card) => void;
   clearHand: () => void;
   setLastDrawnCard: (card: Card | null) => void;
-  setAdminHands: (hands: Record<string, Card[]>) => void;
   setKadiEvent: (event: { playerId: string; playerName: string } | null) => void;
   setDemoStatus: (status: { running: boolean; stage: string; message: string }) => void;
   setCelebrationEvent: (event: { winnerId: string; winnerName: string } | null) => void;
@@ -66,7 +64,6 @@ export const useGameStore = create<ClientState>((set) => ({
   winnerId: null,
   gameOver: false,
   actionMessage: '',
-  adminHands: {},
   kadiEvent: null,
   demoStatus: { running: false, stage: 'IDLE', message: '' },
   celebrationEvent: null,
@@ -130,7 +127,6 @@ export const useGameStore = create<ClientState>((set) => ({
     set({
       lastDrawnCard: card,
     }),
-  setAdminHands: (adminHands) => set({ adminHands }),
   setKadiEvent: (event) => set({
     kadiEvent: event ? { ...event, nonce: Date.now() } : null,
   }),

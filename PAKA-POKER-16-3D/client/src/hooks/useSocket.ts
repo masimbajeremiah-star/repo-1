@@ -143,7 +143,6 @@ export function useSocket() {
     useGameStore(
       (state) => state.setActionMessage
     );
-  const setAdminHands = useGameStore((state) => state.setAdminHands);
   const setKadiEvent = useGameStore((state) => state.setKadiEvent);
   const setDemoStatus = useGameStore((state) => state.setDemoStatus);
   const setCelebrationEvent = useGameStore((state) => state.setCelebrationEvent);
@@ -259,15 +258,6 @@ export function useSocket() {
       }
     };
 
-    const handleAdminState = (payload: { hands?: Record<string, unknown[]> }) => {
-      const normalized = Object.fromEntries(
-        Object.entries(payload?.hands || {}).map(([playerId, cards]) => [
-          playerId,
-          cards.map(normalizeCard).filter((card): card is Card => card !== null),
-        ])
-      );
-      setAdminHands(normalized);
-    };
     const handleKadiCalled = (payload: { playerId?: string; playerName?: string }) => {
       if (!payload?.playerId) return;
       setKadiEvent({ playerId: payload.playerId, playerName: payload.playerName || 'Player' });
@@ -324,7 +314,6 @@ export function useSocket() {
       'gameOver',
       handleGameOver
     );
-    socket.on('adminState', handleAdminState);
     socket.on('kadiCalled', handleKadiCalled);
     socket.on('demo.status', handleDemoStatus);
     socket.on('demo.celebration', handleCelebration);
@@ -369,7 +358,6 @@ export function useSocket() {
         'gameOver',
         handleGameOver
       );
-      socket.off('adminState', handleAdminState);
       socket.off('kadiCalled', handleKadiCalled);
       socket.off('demo.status', handleDemoStatus);
       socket.off('demo.celebration', handleCelebration);
@@ -381,7 +369,6 @@ export function useSocket() {
     setHand,
     setLastDrawnCard,
     setActionMessage,
-    setAdminHands,
     setKadiEvent,
     setDemoStatus,
     setCelebrationEvent,

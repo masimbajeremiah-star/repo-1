@@ -10,6 +10,7 @@ import MonetizationHub from '../components/MonetizationHub';
 import { LocalHandOverlay, PlayedCardOverlay } from '../components/GameplayCardOverlays';
 import { MONETIZATION_FLAGS } from '../monetization/config';
 import { useMonetizationStore } from '../store/useMonetizationStore';
+import { icons } from '../assets';
 
 const suitSymbols = {
   hearts: '♥',
@@ -238,49 +239,72 @@ export default function HomePage({ identity }) {
   if (!currentTable) {
     return (
       <main className="lobby-screen">
-        <section className="lobby-card">
-          <div className="lobby-heading">
-            <div>
-              <span>PAKA Poker 16 3D</span>
-              <h1>Choose a table</h1>
-              <p>{identity?.name || 'Guest'} · <strong className={`plan-label ${monetizationAccount?.entitlements.plan === 'plus' ? 'plus' : ''}`}>{monetizationAccount?.entitlements.plan === 'plus' ? 'PAKA PLUS' : 'PAKA FREE'}</strong> · Card gameplay always available</p>
+        <section className="lobby-card" aria-label="PAKA Poker home">
+          <header className="lobby-appbar">
+            <div className="lobby-brand">
+              <img src={icons.logo} alt="" aria-hidden="true" />
+              <span><strong>PAKA POWER</strong><small>PLAY • CONNECT • COMPETE</small></span>
             </div>
-            <div className="lobby-heading-actions">
-              <PrimaryButton onClick={() => setDepositOpen(true)}>Deposit</PrimaryButton>
-              <PrimaryButton onClick={() => emitEvent('table.create', { name: `${identity?.name || 'Guest'}'s Table`, maxPlayers: 5 })}>
-                Create Table
-              </PrimaryButton>
+            <button className="lobby-profile-button" type="button" onClick={() => setHubView('profile')} aria-label="Open player profile">
+              <span>{(identity?.name || 'G').slice(0, 1).toUpperCase()}</span>
+              <span><strong>{identity?.name || 'Guest'}</strong><small>{monetizationAccount?.entitlements.plan === 'plus' ? 'PAKA PLUS' : 'PAKA FREE'}</small></span>
+            </button>
+          </header>
+
+          <section className="lobby-hero">
+            <div className="lobby-hero-copy">
+              <span className="lobby-live-pill"><i /> LIVE MULTIPLAYER</span>
+              <h1>Ready to call<br /><em>KADI?</em></h1>
+              <p>Join a table and play Kenya's competitive card game. Free play is always available.</p>
+              <div className="lobby-hero-actions">
+                <PrimaryButton onClick={() => emitEvent('table.create', { name: `${identity?.name || 'Guest'}'s Table`, maxPlayers: 5 })}>Create a Table</PrimaryButton>
+                <button type="button" onClick={() => setDepositOpen(true)}>Optional Deposit</button>
+              </div>
             </div>
-          </div>
+            <div className="lobby-hero-art" aria-hidden="true">
+              <span className="hero-card hero-card-one">A<i>♥</i></span>
+              <span className="hero-card hero-card-two">K<i>♠</i></span>
+              <span className="hero-card hero-card-three">8<i>♦</i></span>
+            </div>
+          </section>
+
           <nav className="lobby-feature-nav" aria-label="PAKA features">
-            <button type="button" className="play-selected">PLAY</button>
-            {MONETIZATION_FLAGS.plus && <button type="button" onClick={() => setHubView('plus')}>PAKA PLUS</button>}
-            <button type="button" onClick={() => setHubView('profile')}>PROFILE</button>
-            {MONETIZATION_FLAGS.cosmetics && <button type="button" onClick={() => setHubView('cosmetics')}>COSMETICS</button>}
-            <button type="button" onClick={() => setHubView('rankings')}>RANKINGS</button>
-            {MONETIZATION_FLAGS.clubs && <button type="button" onClick={() => setHubView('clubs')}>CLUBS <small>FOUNDATION</small></button>}
-            {MONETIZATION_FLAGS.creators && <button type="button" onClick={() => setHubView('creators')}>CREATORS <small>FOUNDATION</small></button>}
+            <button type="button" className="play-selected"><span>♠</span>PLAY</button>
+            {MONETIZATION_FLAGS.plus && <button type="button" onClick={() => setHubView('plus')}><span>★</span>PLUS</button>}
+            <button type="button" onClick={() => setHubView('profile')}><span>●</span>PROFILE</button>
+            {MONETIZATION_FLAGS.cosmetics && <button type="button" onClick={() => setHubView('cosmetics')}><span>◆</span>STYLE</button>}
+            <button type="button" onClick={() => setHubView('rankings')}><span>♛</span>RANKS</button>
+            {MONETIZATION_FLAGS.clubs && <button type="button" onClick={() => setHubView('clubs')}><span>♣</span>CLUBS</button>}
+            {MONETIZATION_FLAGS.creators && <button type="button" onClick={() => setHubView('creators')}><span>✦</span>CREATORS</button>}
+            <button type="button" onClick={() => setHubView('friends')}><span>●●</span>FRIENDS</button>
+            <button type="button" onClick={() => setHubView('settings')}><span>⚙</span>SETTINGS</button>
           </nav>
-          <div className="lobby-table-list" aria-live="polite">
-            {tables.length === 0 ? <p>No open tables yet. Create the first one.</p> : tables.map((table) => (
-              <article key={table.id} className="lobby-table-row">
-                <div>
-                  <strong>{table.name}</strong>
-                  <span>{table.playerCount}/{table.maxPlayers} players</span>
-                </div>
-                <PrimaryButton
-                  disabled={table.playerCount >= table.maxPlayers}
-                  onClick={() => {
+
+          <section className="lobby-tables-section">
+            <div className="lobby-section-heading">
+              <div><span>PUBLIC ROOMS</span><h2>Choose a table</h2></div>
+              <span className="lobby-connection"><i /> Online</span>
+            </div>
+            <div className="lobby-table-list" aria-live="polite">
+              {tables.length === 0 ? (
+                <div className="lobby-empty-state"><span>♠</span><strong>No open tables yet</strong><p>Create the first room and invite another player.</p></div>
+              ) : tables.map((table) => (
+                <article key={table.id} className="lobby-table-row">
+                  <span className="table-suit" aria-hidden="true">♠</span>
+                  <div>
+                    <strong>{table.name}</strong>
+                    <span>{table.playerCount}/{table.maxPlayers} players · Free table</span>
+                  </div>
+                  <PrimaryButton disabled={table.playerCount >= table.maxPlayers} onClick={() => {
                     setActionMessage(`Joining ${table.name}…`);
                     emitEvent('table.join', table.id);
-                  }}
-                >
-                  {table.playerCount >= table.maxPlayers ? 'Full' : 'Join'}
-                </PrimaryButton>
-              </article>
-            ))}
-          </div>
-          <p className="lobby-status" role="status">{actionMessage || 'Connected. Select a table to begin.'}</p>
+                  }}>{table.playerCount >= table.maxPlayers ? 'Full' : 'Join'}</PrimaryButton>
+                </article>
+              ))}
+            </div>
+            <p className="lobby-status" role="status">{actionMessage || 'Connected to the PAKA Poker server.'}</p>
+          </section>
+
           {MONETIZATION_FLAGS.ads && monetizationAccount?.entitlements.adsEnabled && <aside className="ad-placeholder" aria-label="Advertisement placement"><small>PAKA FREE · LOBBY AD PLACEMENT</small><span>Ads never interrupt an active turn.</span></aside>}
         </section>
         {depositOpen && <DepositDialog onClose={() => setDepositOpen(false)} />}

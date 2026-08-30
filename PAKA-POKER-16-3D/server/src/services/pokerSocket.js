@@ -120,14 +120,6 @@ function emitTableState(io, table) {
     );
 
     playerSocket.emit('myHand', player.hand);
-
-    if (playerSocket.data.isAdmin) {
-      playerSocket.emit('adminState', {
-        hands: Object.fromEntries(
-          table.gameState.players.map((item) => [item.id, item.hand])
-        ),
-      });
-    }
   }
 }
 

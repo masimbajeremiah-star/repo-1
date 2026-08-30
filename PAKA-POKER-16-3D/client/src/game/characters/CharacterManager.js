@@ -2,153 +2,213 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
-const CHARACTER_URL = `${String(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/assets/characters/shared/human-rigged.glb`;
+const baseUrl = String(import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 const loader = new GLTFLoader();
-let cachedCharacterPromise;
+const templateCache = new Map();
 
-const loadCharacterTemplate = () => {
-  if (!cachedCharacterPromise) {
-    cachedCharacterPromise = loader.loadAsync(CHARACTER_URL).catch((error) => {
-      cachedCharacterPromise = undefined;
+const ASSETS = Object.freeze({
+  player: [
+    `${baseUrl}/assets/characters/player-a/lod0.glb`,
+    `${baseUrl}/assets/characters/player-a/lod1.glb`,
+    `${baseUrl}/assets/characters/player-a/lod2.glb`,
+  ],
+  dealer: [
+    `${baseUrl}/assets/characters/dealer/lod0.glb`,
+    `${baseUrl}/assets/characters/dealer/lod1.glb`,
+    `${baseUrl}/assets/characters/dealer/lod2.glb`,
+  ],
+});
+
+const PLAYER_PALETTES = [
+  { cloth: '#182331', accent: '#8f263e', skin: '#8d573d' },
+  { cloth: '#442034', accent: '#d0a24a', skin: '#c6815d' },
+  { cloth: '#15352d', accent: '#c8b183', skin: '#69412f' },
+  { cloth: '#29254d', accent: '#a95569', skin: '#d09a75' },
+  { cloth: '#4b2d1f', accent: '#c9963b', skin: '#9f6449' },
+];
+
+const loadTemplate = (url) => {
+  if (!templateCache.has(url)) {
+    templateCache.set(url, loader.loadAsync(url).catch((error) => {
+      templateCache.delete(url);
       throw error;
-    });
+    }));
   }
-  return cachedCharacterPromise;
+  return templateCache.get(url);
 };
 
-const playerPalette = ['#1f2937', '#4c1d2f', '#17352c', '#312e57', '#51301d'];
+function findBone(root, ...names) {
+  for (const name of names) {
+    const bone = root.getObjectByName(name);
+    if (bone) return bone;
+  }
+  return null;
+}
 
-function createDistantSilhouette(color) {
-  const group = new THREE.Group();
-  const material = new THREE.MeshStandardMaterial({ color, roughness: 0.82 });
-  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 1.1, 5, 10), material);
-  torso.position.y = 1.16;
-  const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 1), new THREE.MeshStandardMaterial({ color: '#a96f50', roughness: 0.9 }));
-  head.position.y = 2.25;
-  group.add(torso, head);
-  return group;
+function tuneMaterials(root, seatIndex, dealer, active) {
+  const palette = PLAYER_PALETTES[seatIndex % PLAYER_PALETTES.length];
+  let meshIndex = 0;
+  root.traverse((object) => {
+    if (!object.isMesh) return;
+    object.castShadow = dealer || seatIndex < 3;
+    object.receiveShadow = true;
+    const source = Array.isArray(object.material) ? object.material : [object.material];
+    const materials = source.filter(Boolean).map((material) => {
+      const instance = material.clone();
+      instance.roughness = Math.max(0.5, instance.roughness ?? 0.72);
+      instance.metalness = Math.min(0.12, instance.metalness ?? 0);
+      // Preserve the authored face/skin texture and use a restrained tint to
+      // create a curated wardrobe range without runtime procedural avatars.
+      if (instance.color) {
+        const tint = dealer
+          ? (meshIndex === 0 ? '#f0ece3' : '#421523')
+          : (meshIndex === 0 ? palette.cloth : palette.accent);
+        instance.color.lerp(new THREE.Color(tint), dealer ? 0.18 : 0.12);
+      }
+      if (active) {
+        instance.emissive = new THREE.Color('#8a5a18');
+        instance.emissiveIntensity = 0.08;
+      }
+      return instance;
+    });
+    object.material = Array.isArray(object.material) ? materials : materials[0];
+    meshIndex += 1;
+  });
+}
+
+function startIdleMixer(gltf, model, seatIndex) {
+  const mixer = new THREE.AnimationMixer(model);
+  const clip = gltf.animations.find((item) => /idle_eyes|idle/i.test(item.name)) || gltf.animations[0];
+  if (clip) {
+    const action = mixer.clipAction(clip);
+    action.timeScale = 0.7 + (seatIndex % 3) * 0.07;
+    action.time = (seatIndex * 0.61) % Math.max(clip.duration, 0.01);
+    action.play();
+  }
+  return mixer;
+}
+
+function createKadiIndicator() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 160;
+  const context = canvas.getContext('2d');
+  context.fillStyle = 'rgba(104, 4, 24, .96)';
+  context.strokeStyle = '#ffcf86';
+  context.lineWidth = 8;
+  context.beginPath();
+  context.roundRect(7, 7, 498, 146, 42);
+  context.fill();
+  context.stroke();
+  context.fillStyle = '#fff6df';
+  context.font = '900 76px Arial';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText('✋  KADI!', 256, 82);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    opacity: 0,
+  }));
+  sprite.position.set(0, 3.05, 0);
+  sprite.scale.set(1.9, 0.6, 1);
+  sprite.visible = false;
+  return sprite;
 }
 
 export async function createRiggedPlayerCharacter({ player, position, seatIndex, dealer = false, active = false }) {
-  const gltf = await loadCharacterTemplate();
+  const urls = dealer ? ASSETS.dealer : ASSETS.player;
+  const templates = await Promise.all(urls.map(loadTemplate));
   const root = new THREE.Group();
   root.name = dealer ? 'rigged-dealer-character' : `player-model-${player?.id || seatIndex}`;
 
   const lod = new THREE.LOD();
-  const rigged = cloneSkeleton(gltf.scene);
-  rigged.scale.setScalar(dealer ? 0.56 : 0.5);
-  rigged.position.y = dealer ? -1.28 : -1.26;
-  rigged.traverse((object) => {
-    if (!object.isMesh) return;
-    object.castShadow = dealer || seatIndex < 3;
-    object.receiveShadow = true;
-    if (!object.material) return;
-    object.material = object.material.clone();
-    object.material.roughness = Math.max(0.58, object.material.roughness ?? 0.7);
-    const wardrobeColor = dealer ? '#2b111a' : playerPalette[seatIndex % playerPalette.length];
-    object.material.color.lerp(new THREE.Color(wardrobeColor), dealer ? 0.48 : 0.36);
-    if (active) {
-      object.material.emissive = new THREE.Color('#8a5a18');
-      object.material.emissiveIntensity = 0.12;
-    }
+  lod.name = `${root.name}-lod`;
+  const mixers = [];
+  const models = templates.map((gltf, level) => {
+    const model = cloneSkeleton(gltf.scene);
+    model.name = `${root.name}-lod${level}`;
+    model.scale.setScalar(dealer ? 1.42 : 1.3);
+    model.position.y = dealer ? -1.25 : -1.32;
+    tuneMaterials(model, seatIndex, dealer, active);
+    mixers.push(startIdleMixer(gltf, model, seatIndex));
+    lod.addLevel(model, dealer ? [0, 10.5, 17][level] : [0, 8.5, 14][level], level === 0 ? 0 : 0.12);
+    return model;
   });
 
-  const wardrobe = new THREE.Group();
-  wardrobe.name = dealer ? 'dealer-uniform-details' : `player-${seatIndex}-wardrobe-details`;
-  const cloth = new THREE.MeshStandardMaterial({
-    color: dealer ? '#3a1320' : playerPalette[seatIndex % playerPalette.length],
-    roughness: 0.74,
-  });
-  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.035, 7, 22, Math.PI), cloth);
-  collar.position.set(0, 1.47, 0.23);
-  collar.rotation.x = Math.PI / 2;
-  wardrobe.add(collar);
-  if (dealer) {
-    const shirt = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.78), new THREE.MeshStandardMaterial({ color: '#eee9dc', roughness: 0.82 }));
-    shirt.position.set(0, 1.02, 0.37);
-    const bow = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), new THREE.MeshStandardMaterial({ color: '#111113', roughness: 0.6 }));
-    bow.scale.set(1.7, 0.55, 0.55);
-    bow.position.set(0, 1.43, 0.4);
-    wardrobe.add(shirt, bow);
-  }
-  const hair = new THREE.Mesh(
-    seatIndex % 2 === 0 ? new THREE.SphereGeometry(0.31, 14, 9, 0, Math.PI * 2, 0, Math.PI * 0.54) : new THREE.CapsuleGeometry(0.22, 0.26, 5, 10),
-    new THREE.MeshStandardMaterial({ color: seatIndex % 3 === 0 ? '#17110e' : '#2a1b14', roughness: 0.95 })
-  );
-  hair.position.set(0, 2.72, seatIndex % 2 ? -0.1 : 0);
-  if (seatIndex % 2) hair.rotation.z = Math.PI / 2;
-  wardrobe.add(hair);
-  rigged.add(wardrobe);
-  lod.addLevel(rigged, 0);
-  lod.addLevel(createDistantSilhouette(dealer ? '#3b1622' : playerPalette[seatIndex % playerPalette.length]), 13);
   root.add(lod);
   root.position.set(position[0], position[1], position[2]);
-  root.lookAt(0, root.position.y + 0.8, 0);
-
-  const mixer = new THREE.AnimationMixer(rigged);
-  const idleClip = gltf.animations.find((clip) => /working|idle/i.test(clip.name)) || gltf.animations[0];
-  if (idleClip) {
-    const action = mixer.clipAction(idleClip);
-    action.timeScale = 0.72 + (seatIndex % 3) * 0.06;
-    action.time = (seatIndex * 0.71) % Math.max(idleClip.duration, 0.01);
-    action.play();
-  }
-  root.userData.characterMixer = mixer;
-  root.userData.characterAsset = CHARACTER_URL;
-  root.userData.lodDistances = [0, 13];
+  root.lookAt(0, root.position.y + 0.85, 0);
+  root.userData.characterAsset = urls[0];
+  root.userData.characterAssets = urls;
+  root.userData.lodDistances = dealer ? [0, 10.5, 17] : [0, 8.5, 14];
   root.userData.isActivePlayer = active;
-  const hips = rigged.getObjectByName('Hips');
-  const spine = rigged.getObjectByName('Spine');
-  const leftUpLeg = rigged.getObjectByName('LeftUpLeg');
-  const rightUpLeg = rigged.getObjectByName('RightUpLeg');
-  const leftLeg = rigged.getObjectByName('LeftLeg');
-  const rightLeg = rigged.getObjectByName('RightLeg');
-  const leftArm = rigged.getObjectByName('LeftArm');
-  const leftForeArm = rigged.getObjectByName('LeftForeArm');
-  root.userData.applyCharacterPose = (time) => {
-    if (dealer) {
-      if (spine) spine.rotation.x = -0.04 + Math.sin(time * 0.7) * 0.012;
-      root.position.y = position[1] + Math.sin(time * 0.72) * 0.01;
-      return;
-    }
-    if (hips) hips.rotation.x = -0.13;
-    if (spine) spine.rotation.x = active ? -0.14 : -0.07;
-    if (leftUpLeg) leftUpLeg.rotation.x = -1.02;
-    if (rightUpLeg) rightUpLeg.rotation.x = -1.02;
-    if (leftLeg) leftLeg.rotation.x = 1.45;
-    if (rightLeg) rightLeg.rotation.x = 1.45;
-    if (leftArm) leftArm.rotation.z = 0.48;
-    if (leftForeArm) leftForeArm.rotation.x = -0.82;
-    root.position.y = position[1] + Math.sin(time * 0.82 + seatIndex) * 0.012;
+  root.userData.characterMixer = {
+    update(delta) {
+      const visibleLevel = lod.getCurrentLevel();
+      mixers[visibleLevel]?.update(delta);
+    },
+    stopAllAction() {
+      mixers.forEach((mixer) => mixer.stopAllAction());
+    },
   };
-  const rightArm = rigged.getObjectByName('RightArm');
-  const rightForeArm = rigged.getObjectByName('RightForeArm');
-  const rightHand = rigged.getObjectByName('RightHand');
-  if (rightArm && rightForeArm && rightHand) {
+
+  const primary = models[0];
+  const spine = findBone(primary, 'Spine', 'Spine1');
+  const head = findBone(primary, 'Head');
+  const rightHand = findBone(primary, 'RightHand');
+  const leftHand = findBone(primary, 'LeftHand');
+  root.userData.torso = spine;
+  root.userData.torsoPosition = spine?.position.clone() || null;
+  root.userData.head = head;
+  root.userData.applyCharacterPose = (time) => {
+    if (spine) spine.rotation.x = (dealer ? -0.035 : active ? -0.11 : -0.055) + Math.sin(time * 0.7 + seatIndex) * 0.009;
+    if (head) head.rotation.y = Math.sin(time * 0.42 + seatIndex * 1.7) * 0.045;
+    root.position.y = position[1] + Math.sin(time * 0.72 + seatIndex) * 0.009;
+  };
+
+  if (rightHand) {
     root.userData.rightArmRig = {
-      upperArm: rightArm,
-      forearm: rightForeArm,
+      upperArm: findBone(primary, 'RightArm', 'RightShoulder') || rightHand,
+      forearm: findBone(primary, 'RightForeArm', 'RightLowerArm') || rightHand,
       hand: rightHand,
-      upperPosition: rightArm.position.clone(),
-      forearmPosition: rightForeArm.position.clone(),
+      upperPosition: (findBone(primary, 'RightArm', 'RightShoulder') || rightHand).position.clone(),
+      forearmPosition: (findBone(primary, 'RightForeArm', 'RightLowerArm') || rightHand).position.clone(),
       handPosition: rightHand.position.clone(),
-      upperRotation: rightArm.rotation.clone(),
-      forearmRotation: rightForeArm.rotation.clone(),
+      upperRotation: (findBone(primary, 'RightArm', 'RightShoulder') || rightHand).rotation.clone(),
+      forearmRotation: (findBone(primary, 'RightForeArm', 'RightLowerArm') || rightHand).rotation.clone(),
     };
+  }
+  root.userData.armRigs = [rightHand, leftHand].filter(Boolean).map((hand, index) => ({
+    hand,
+    side: index === 0 ? -1 : 1,
+    upperArm: hand,
+    forearm: hand,
+    upperPosition: hand.position.clone(),
+    forearmPosition: hand.position.clone(),
+    handPosition: hand.position.clone(),
+  }));
+  if (!dealer) {
+    const kadiLabel = createKadiIndicator();
+    root.userData.kadiLabel = kadiLabel;
+    root.add(kadiLabel);
   }
   return root;
 }
 
 export function disposeRiggedCharacter(character) {
-  const mixer = character?.userData?.characterMixer;
-  mixer?.stopAllAction();
+  character?.userData?.characterMixer?.stopAllAction?.();
   character?.traverse((object) => {
     if (!object.isMesh) return;
-    // SkeletonUtils clones share the cached template geometry. Only the
-    // per-instance materials created above belong to this character.
+    // SkeletonUtils clones share cached geometry and textures. Only cloned
+    // material instances are owned by a seat and may be disposed here.
     if (Array.isArray(object.material)) object.material.forEach((material) => material.dispose?.());
     else object.material?.dispose?.();
   });
 }
 
-export const riggedCharacterAssetUrl = CHARACTER_URL;
+export const riggedCharacterAssetUrl = ASSETS.player[0];
+export const riggedCharacterAssetUrls = ASSETS;

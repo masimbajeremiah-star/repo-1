@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   root: 'client',
+  // GitHub Pages serves this repository below /repo-1/. Native Capacitor
+  // packaging can opt into relative URLs with VITE_BASE_PATH=./.
+  base: process.env.VITE_BASE_PATH || '/repo-1/',
 
   plugins: [
     react(),

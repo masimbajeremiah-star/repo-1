@@ -6,7 +6,7 @@ import { pendingPlatformBillingProvider } from '../services/monetizationService'
 import { useMonetizationStore } from '../store/useMonetizationStore';
 
 const plusBenefits = ['No Ads', 'Premium Tables', 'Premium Avatars', 'Premium Card Backs', 'Advanced Statistics', 'Extended Match History', 'Match Replays', 'Private Clubs', 'Premium Profile Badge', 'Seasonal Cosmetics'];
-const labels = { profile: 'Player Profile', plus: 'PAKA Plus', cosmetics: 'Cosmetics', rankings: 'Rankings', creators: 'Creators', clubs: 'Clubs', business: 'Business Scenarios' };
+const labels = { profile: 'Player Profile', plus: 'PAKA Plus', cosmetics: 'Cosmetics', rankings: 'Rankings', friends: 'Friends', creators: 'Creators', clubs: 'Clubs', settings: 'Settings', business: 'Business Scenarios' };
 
 export default function MonetizationHub({ initialView, onClose }) {
   const [view, setView] = useState(initialView || 'profile');
@@ -83,8 +83,10 @@ export default function MonetizationHub({ initialView, onClose }) {
           })}</div>
         </>}
         {!loading && view === 'rankings' && <><span className="hub-eyebrow">COMPETITIVE, NON-CASH PROGRESSION</span><h2>Rankings & XP</h2><p>Bronze → Silver → Gold → Platinum → Diamond → Master → Legend</p><div className="foundation-card"><strong>Current rank: {account?.profile.progression.league || 'Bronze'}</strong><p>Rankings, XP, streaks and achievements have no cash redemption value.</p></div></>}
+        {!loading && view === 'friends' && <><span className="hub-eyebrow">PLAY • CONNECT • COMPETE</span><h2>Friends</h2><div className="foundation-card"><strong>Social play foundation</strong><p>Friend discovery and invitations will appear here. Normal public multiplayer remains available now.</p></div></>}
         {!loading && view === 'creators' && <><span className="hub-eyebrow">CREATOR FOUNDATION</span><h2>Creators</h2><div className="foundation-card"><strong>Audience tools are being prepared</strong><p>Profiles, following and engagement metrics will support future creators. Creator monetization coming later; no fake revenue is displayed.</p></div></>}
         {!loading && view === 'clubs' && <><span className="hub-eyebrow">SOCIAL GAME HOSTING</span><h2>Clubs</h2><div className="foundation-card"><strong>{isPlus ? 'Private club creation unlocked' : 'Public discovery foundation available'}</strong><p>Clubs and private rooms are social features only. They never contain stakes or player-funded cash pots.</p></div></>}
+        {!loading && view === 'settings' && <><span className="hub-eyebrow">APP PREFERENCES</span><h2>Settings</h2><div className="foundation-card"><strong>Game settings</strong><p>Camera reset remains available from the in-match settings menu. Audio and accessibility preferences are being prepared.</p></div></>}
         {!loading && view === 'business' && <><span className="hub-eyebrow">ADMIN SCENARIO — NOT A FORECAST</span><h2>Revenue Scenarios</h2><p>Gross revenue before store fees, taxes and operating costs.</p><div className="scenario-grid">{REVENUE_SCENARIOS.map((scenario) => <article key={scenario.subscribers}><strong>{scenario.subscribers.toLocaleString()} subscribers</strong><span>KSh {scenario.monthlyGross.toLocaleString()} / month</span><span>KSh {scenario.yearlyGross.toLocaleString()} / year</span></article>)}</div><div className="conversion-calculator"><label>Monthly active users<input type="number" min="0" value={activeUsers} onChange={(event) => setActiveUsers(Number(event.target.value) || 0)} /></label><label>Conversion rate (%)<input type="number" min="0" max="100" step="0.1" value={conversion} onChange={(event) => setConversion(Number(event.target.value) || 0)} /></label><strong>{conversionScenario.subscribers.toLocaleString()} subscribers · KSh {conversionScenario.monthlyGross.toLocaleString()} monthly gross</strong></div></>}
         {message && <p className="hub-message" role="status">{message}</p>}
       </div>

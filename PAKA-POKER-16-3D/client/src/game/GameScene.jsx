@@ -1592,7 +1592,10 @@ export default function GameScene() {
           rig.forearm.position.copy(rig.forearmPosition).add(new THREE.Vector3(0, lift * 1.5, -lift * 0.25));
           rig.forearm.rotation.x = rig.forearmRotation.x * (1 - lift) - lift * 0.18;
           rig.hand.position.copy(rig.handPosition).add(new THREE.Vector3(0, lift * 2.05, -lift * 0.35));
-          model.userData.torso.position.y = 0.62 + lift * 0.12;
+          if (model.userData.torso && model.userData.torsoPosition) {
+            model.userData.torso.position.copy(model.userData.torsoPosition);
+            model.userData.torso.position.y += lift * 0.12;
+          }
           if (model.userData.kadiLabel) {
             model.userData.kadiLabel.visible = phase !== 'idle';
             model.userData.kadiLabel.material.opacity = phase === 'held' ? 1 : Math.max(0.35, lift);
@@ -1797,11 +1800,8 @@ export default function GameScene() {
       const player = players.find((p) => p.id === playerId);
       // Keep the foreground clear: the local hand has priority over showing a
       // body at the camera seat. Remote players remain visible beyond the felt.
-      const visualOccupant = !player && index > 0
-        ? { id: `visual-seat-${index}`, name: 'Visual guest', handCount: 0 }
-        : null;
-      const visiblePerson = player || visualOccupant;
-      if (visiblePerson && playerId !== clientId) {
+      const visiblePerson = player || null;
+      if (visiblePerson) {
         const fallback = createPlayerBust(visiblePerson, position);
         seatGroup.add(fallback);
         createRiggedPlayerCharacter({
@@ -1824,9 +1824,7 @@ export default function GameScene() {
       const seatRole = playerId === clientId ? 'YOU' : `PLAYER ${index + 1}`;
       const labelText = player
         ? `${seatRole} • ${player.name} • ${player.handCount ?? 0} CARDS`
-        : visualOccupant
-          ? `PLAYER ${index + 1} • OPEN SEAT • VISUAL GUEST`
-          : `PLAYER ${index + 1} • OPEN SEAT`;
+        : `PLAYER ${index + 1} • OPEN SEAT`;
       const label = createTextSprite(labelText);
       if (label) {
         label.position.set(position[0], 2.95, position[2]);
@@ -2026,5 +2024,5 @@ export default function GameScene() {
     disposeGroupChildren(drawnCardGroup);
   }, [lastDrawnCard, cardAssetsReady]);
 
-  return <div ref={mountRef} className="three-scene" data-scene-version="paka-power-penthouse-2026" aria-label="PAKA Power luxury Nairobi penthouse game table" />;
+  return <div ref={mountRef} className="three-scene" data-scene-version="paka-realistic-lounge-2026" aria-label="PAKA Poker realistic luxury lounge game table" />;
 }
