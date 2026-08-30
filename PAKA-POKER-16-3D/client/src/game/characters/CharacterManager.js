@@ -55,7 +55,7 @@ function tuneMaterials(root, seatIndex, dealer, active) {
     const source = Array.isArray(object.material) ? object.material : [object.material];
     const materials = source.filter(Boolean).map((material) => {
       const instance = material.clone();
-      instance.roughness = Math.max(0.5, instance.roughness ?? 0.72);
+      instance.roughness = Math.min(0.68, Math.max(0.38, instance.roughness ?? 0.58));
       instance.metalness = Math.min(0.12, instance.metalness ?? 0);
       // Preserve the authored face/skin texture and use a restrained tint to
       // create a curated wardrobe range without runtime procedural avatars.
@@ -68,6 +68,11 @@ function tuneMaterials(root, seatIndex, dealer, active) {
       if (active) {
         instance.emissive = new THREE.Color('#8a5a18');
         instance.emissiveIntensity = 0.08;
+      } else if (instance.color) {
+        // A tiny neutral lift preserves facial and clothing detail in the
+        // nighttime lounge while remaining physically shaded by scene lights.
+        instance.emissive = instance.color.clone().multiplyScalar(0.16);
+        instance.emissiveIntensity = dealer ? 0.16 : 0.1;
       }
       return instance;
     });

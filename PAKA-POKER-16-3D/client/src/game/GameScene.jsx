@@ -363,7 +363,7 @@ function createGameplayBackdrop(scene) {
 
   const backWall = new THREE.Mesh(
     new THREE.CylinderGeometry(14.8, 14.8, 10.5, 96, 1, true, Math.PI * 0.17, Math.PI * 0.66),
-    new THREE.MeshStandardMaterial({ color: '#030305', roughness: 0.9, side: THREE.BackSide })
+    new THREE.MeshBasicMaterial({ color: '#061226', side: THREE.BackSide })
   );
   backWall.position.set(0, 3.6, -2.4);
   backWall.rotation.y = Math.PI * 0.08;
@@ -372,13 +372,10 @@ function createGameplayBackdrop(scene) {
   // High-contrast windows and distinct tower silhouettes keep the city legible
   // behind the players instead of collapsing into a vague dark wall.
   const cityTexture = createCityWindowTexture();
-  const cityMaterial = new THREE.MeshStandardMaterial({
+  const cityMaterial = new THREE.MeshBasicMaterial({
     map: cityTexture,
-    emissiveMap: cityTexture,
-    emissive: '#d9a34b',
-    emissiveIntensity: 1.3,
-    color: '#607da7',
-    roughness: 0.62,
+    color: '#d6e7ff',
+    toneMapped: false,
   });
   for (let index = 0; index < 11; index += 1) {
     const angle = -0.76 + index * 0.152;
@@ -396,13 +393,10 @@ function createGameplayBackdrop(scene) {
     group.add(mullion);
   }
 
-  const towerMaterial = new THREE.MeshStandardMaterial({
+  const towerMaterial = new THREE.MeshBasicMaterial({
     map: cityTexture,
-    emissiveMap: cityTexture,
-    emissive: '#d39a42',
-    emissiveIntensity: 1.05,
-    color: '#314968',
-    roughness: 0.7,
+    color: '#b9d3f5',
+    toneMapped: false,
   });
   [-10.6, -8.4, -5.9, -3.2, 3.4, 6.1, 8.7, 10.8].forEach((x, index) => {
     const height = 5.4 + (index % 4) * 1.15;
@@ -410,6 +404,25 @@ function createGameplayBackdrop(scene) {
     tower.position.set(x, -0.8 + height / 2, -11.3 - (index % 3) * 0.45);
     tower.castShadow = false;
     group.add(tower);
+  });
+
+  // A second row of nearer towers creates readable depth and recognizable
+  // building silhouettes instead of a single flat texture strip.
+  [-9.5, -6.9, -4.4, -1.8, 1.2, 4.2, 7.1, 9.7].forEach((x, index) => {
+    const height = 4.6 + ((index * 3) % 5) * 0.82;
+    const width = 1.05 + (index % 3) * 0.24;
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(width, height, 1.05), towerMaterial);
+    tower.position.set(x, -0.9 + height / 2, -9.6 - (index % 2) * 0.35);
+    group.add(tower);
+    if (index % 2 === 0) {
+      const crown = new THREE.Mesh(
+        new THREE.ConeGeometry(width * 0.38, 0.9, 4),
+        new THREE.MeshBasicMaterial({ color: '#d9bb68', toneMapped: false })
+      );
+      crown.position.set(x, tower.position.y + height / 2 + 0.45, tower.position.z);
+      crown.rotation.y = Math.PI / 4;
+      group.add(crown);
+    }
   });
 
   // Gold floor inlays make the pale marble read as an intentional luxury floor.
@@ -1315,7 +1328,9 @@ export default function GameScene() {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     scene.background = new THREE.Color('#020817');
-    scene.fog = new THREE.FogExp2('#07101f', 0.0035);
+    // The approved skyline must stay crisp; distance is communicated through
+    // tower scale and color rather than atmospheric blur.
+    scene.fog = null;
 
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 1000);
     camera.position.set(0, 6.6, 11.75);
@@ -1331,7 +1346,7 @@ export default function GameScene() {
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1.18;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -1355,6 +1370,14 @@ export default function GameScene() {
       const fill = new THREE.PointLight('#ffc982', 4.2, 13, 2);
       fill.position.set(...position);
       scene.add(fill);
+    });
+    // Soft front-facing portrait lights separate faces and wardrobe textures
+    // from the night skyline without flattening the red felt.
+    [[-5.8, 3.4, 4.2], [0, 4.8, 2.8], [5.8, 3.4, 4.2]].forEach((position) => {
+      const portraitLight = new THREE.SpotLight('#fff0d2', 7.5, 16, Math.PI / 5.5, 0.62, 1.25);
+      portraitLight.position.set(...position);
+      portraitLight.target.position.set(position[0] * 0.58, 1.1, -2.7);
+      scene.add(portraitLight, portraitLight.target);
     });
 
     if (USE_PENTHOUSE_PRESENTATION) {
