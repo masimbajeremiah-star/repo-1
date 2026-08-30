@@ -93,54 +93,6 @@ function startIdleMixer(gltf, model, seatIndex) {
   return mixer;
 }
 
-function createFaceController(model, seatIndex, active) {
-  const faceMeshes = [];
-  model.traverse((object) => {
-    if (!object.isMesh || !object.morphTargetDictionary || !object.morphTargetInfluences) return;
-    faceMeshes.push(object);
-  });
-  const setTarget = (name, value) => {
-    faceMeshes.forEach((mesh) => {
-      const index = mesh.morphTargetDictionary[name];
-      if (index != null) mesh.morphTargetInfluences[index] = THREE.MathUtils.clamp(value, 0, 1);
-    });
-  };
-  const controlledTargets = [
-    'mouthOpen', 'mouthSmile', 'mouthSmileLeft', 'mouthSmileRight',
-    'mouthFrownLeft', 'mouthFrownRight', 'jawOpen', 'browDownLeft',
-    'browDownRight', 'browInnerUp', 'eyeSquintLeft', 'eyeSquintRight',
-    'viseme_aa', 'viseme_E', 'viseme_O', 'viseme_U',
-  ];
-  return (time) => {
-    controlledTargets.forEach((name) => setTarget(name, 0));
-    const phaseTime = time + seatIndex * 2.15;
-    const phase = Math.floor(phaseTime / 4.2) % 4;
-    const pulse = (Math.sin(phaseTime * 7.3) + 1) / 2;
-    const slowPulse = (Math.sin(phaseTime * 2.1) + 1) / 2;
-    if (active || phase === 0) {
-      setTarget('jawOpen', 0.08 + pulse * 0.2);
-      setTarget(['viseme_aa', 'viseme_E', 'viseme_O', 'viseme_U'][Math.floor(phaseTime * 4) % 4], 0.22 + pulse * 0.34);
-      setTarget('browInnerUp', 0.08 + slowPulse * 0.12);
-    } else if (phase === 1) {
-      setTarget('mouthSmile', 0.42 + slowPulse * 0.3);
-      setTarget('mouthSmileLeft', 0.38);
-      setTarget('mouthSmileRight', 0.38);
-      setTarget('jawOpen', 0.08 + slowPulse * 0.24);
-      setTarget('eyeSquintLeft', 0.18 + slowPulse * 0.2);
-      setTarget('eyeSquintRight', 0.18 + slowPulse * 0.2);
-    } else if (phase === 2) {
-      setTarget('mouthFrownLeft', 0.24 + slowPulse * 0.16);
-      setTarget('mouthFrownRight', 0.24 + slowPulse * 0.16);
-      setTarget('browDownLeft', 0.18);
-      setTarget('browDownRight', 0.18);
-    } else {
-      setTarget('mouthSmile', 0.12);
-      setTarget('browInnerUp', 0.08);
-    }
-    return phase;
-  };
-}
-
 function createKadiIndicator() {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -184,8 +136,8 @@ export async function createRiggedPlayerCharacter({ player, position, seatIndex,
   const models = templates.map((gltf, level) => {
     const model = cloneSkeleton(gltf.scene);
     model.name = `${root.name}-lod${level}`;
-    model.scale.setScalar(dealer ? 1.58 : 1.55);
-    model.position.y = dealer ? -1.08 : -0.95;
+    model.scale.setScalar(dealer ? 1.42 : 1.3);
+    model.position.y = dealer ? -1.25 : -1.32;
     tuneMaterials(model, seatIndex, dealer, active);
     mixers.push(startIdleMixer(gltf, model, seatIndex));
     lod.addLevel(model, dealer ? [0, 10.5, 17][level] : [0, 8.5, 14][level], level === 0 ? 0 : 0.12);
@@ -210,7 +162,6 @@ export async function createRiggedPlayerCharacter({ player, position, seatIndex,
   };
 
   const primary = models[0];
-  const faceControllers = models.map((model) => createFaceController(model, seatIndex, active));
   const spine = findBone(primary, 'Spine', 'Spine1');
   const head = findBone(primary, 'Head');
   const rightHand = findBone(primary, 'RightHand');
@@ -219,13 +170,8 @@ export async function createRiggedPlayerCharacter({ player, position, seatIndex,
   root.userData.torsoPosition = spine?.position.clone() || null;
   root.userData.head = head;
   root.userData.applyCharacterPose = (time) => {
-    let expressionPhase = 3;
-    faceControllers.forEach((updateFace) => { expressionPhase = updateFace(time); });
     if (spine) spine.rotation.x = (dealer ? -0.035 : active ? -0.11 : -0.055) + Math.sin(time * 0.7 + seatIndex) * 0.009;
-    if (head) {
-      head.rotation.y = Math.sin(time * 0.42 + seatIndex * 1.7) * (expressionPhase === 0 ? 0.14 : 0.075);
-      head.rotation.x = Math.sin(time * 1.15 + seatIndex) * (expressionPhase === 1 ? 0.055 : 0.025);
-    }
+    if (head) head.rotation.y = Math.sin(time * 0.42 + seatIndex * 1.7) * 0.045;
     root.position.y = position[1] + Math.sin(time * 0.72 + seatIndex) * 0.009;
   };
 
