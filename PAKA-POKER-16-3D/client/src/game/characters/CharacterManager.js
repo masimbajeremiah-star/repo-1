@@ -184,8 +184,8 @@ export async function createRiggedPlayerCharacter({ player, position, seatIndex,
   const models = templates.map((gltf, level) => {
     const model = cloneSkeleton(gltf.scene);
     model.name = `${root.name}-lod${level}`;
-    model.scale.setScalar(dealer ? 1.58 : 1.55);
-    model.position.y = dealer ? -1.08 : -0.95;
+    model.scale.setScalar(dealer ? 2.18 : 2.12);
+    model.position.y = dealer ? -0.72 : -0.58;
     tuneMaterials(model, seatIndex, dealer, active);
     mixers.push(startIdleMixer(gltf, model, seatIndex));
     lod.addLevel(model, dealer ? [0, 10.5, 17][level] : [0, 8.5, 14][level], level === 0 ? 0 : 0.12);
@@ -193,7 +193,7 @@ export async function createRiggedPlayerCharacter({ player, position, seatIndex,
   });
 
   root.add(lod);
-  root.position.set(position[0], position[1], position[2]);
+  root.position.set(position[0], position[1] + (dealer ? 1.72 : 1.48), position[2]);
   root.lookAt(0, root.position.y + 0.85, 0);
   root.userData.characterAsset = urls[0];
   root.userData.characterAssets = urls;
