@@ -35,7 +35,9 @@ const KADI_TOTAL_MS = KADI_RAISE_MS + KADI_HOLD_MS + KADI_LOWER_MS;
 // server-authoritative store below.
 const USE_PENTHOUSE_PRESENTATION = false;
 const USE_PHOTOREAL_BACKGROUND = true;
-const PHOTOREAL_BACKGROUND_URL = `${String(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/assets/environment/paka-photoreal-table-v1.png`;
+const ASSET_BASE_URL = String(import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+const PHOTOREAL_BACKGROUND_URL = `${ASSET_BASE_URL}/assets/environment/paka-photoreal-lounge-empty-v1.png`;
+const PHOTOREAL_PEOPLE_URL = `${ASSET_BASE_URL}/assets/environment/paka-photoreal-table-v1.png`;
 const CELEBRATION_MS = 7500;
 const SEAT_ANCHORS = [
   [0, 0.13, 5.82],
@@ -1334,6 +1336,20 @@ export default function GameScene() {
     // tower scale and color rather than atmospheric blur.
     scene.fog = null;
 
+    let peopleMotionLayer = null;
+    if (USE_PHOTOREAL_BACKGROUND) {
+      peopleMotionLayer = document.createElement('div');
+      peopleMotionLayer.className = 'photoreal-people-motion-layer';
+      ['left', 'upper-left', 'dealer', 'upper-right', 'right'].forEach((seat, index) => {
+        const person = document.createElement('span');
+        person.className = `photoreal-person photoreal-person-${seat}`;
+        person.style.backgroundImage = `url(${PHOTOREAL_PEOPLE_URL})`;
+        person.style.animationDelay = `${index * -0.83}s`;
+        peopleMotionLayer.appendChild(person);
+      });
+      mount.appendChild(peopleMotionLayer);
+    }
+
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 1000);
     camera.position.set(0, 6.6, 11.75);
     camera.lookAt(0, 0.72, -0.65);
@@ -1696,6 +1712,7 @@ export default function GameScene() {
         audio.pause();
         audio.src = '';
       }
+      peopleMotionLayer?.remove();
       mount.removeChild(renderer.domElement);
       scene.traverse((object) => {
         object.geometry?.dispose?.();

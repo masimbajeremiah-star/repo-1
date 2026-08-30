@@ -271,6 +271,8 @@ button {
 }
 
 .scene-panel .three-scene canvas {
+  position: relative;
+  z-index: 2;
   display: block;
   width: 100%;
   height: 100%;
@@ -282,6 +284,48 @@ button {
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
+}
+
+.photoreal-people-motion-layer,
+.photoreal-person {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.photoreal-people-motion-layer {
+  z-index: 1;
+  overflow: hidden;
+}
+
+.photoreal-person {
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  will-change: transform;
+  animation: photoreal-player-idle 4.8s ease-in-out infinite alternate;
+}
+
+.photoreal-person-left { clip-path: polygon(0 24%, 19% 23%, 22% 65%, 0 70%); transform-origin: 10% 45%; }
+.photoreal-person-upper-left { clip-path: polygon(18% 17%, 40% 16%, 40% 50%, 17% 53%); transform-origin: 29% 34%; animation-name: photoreal-player-converse; }
+.photoreal-person-dealer { clip-path: polygon(41% 7%, 59% 7%, 59% 47%, 41% 47%); transform-origin: 50% 30%; animation-duration: 5.4s; }
+.photoreal-person-upper-right { clip-path: polygon(59% 16%, 81% 16%, 82% 52%, 58% 52%); transform-origin: 70% 35%; animation-name: photoreal-player-converse; animation-direction: alternate-reverse; }
+.photoreal-person-right { clip-path: polygon(76% 23%, 100% 23%, 100% 69%, 75% 63%); transform-origin: 88% 45%; animation-duration: 5.8s; }
+
+@keyframes photoreal-player-idle {
+  0% { transform: translate3d(0, 0, 0) scale(1); filter: brightness(1); }
+  45% { transform: translate3d(0, -1px, 0) scale(1.002); filter: brightness(1.015); }
+  100% { transform: translate3d(1px, -3px, 0) scale(1.004); filter: brightness(1.025); }
+}
+
+@keyframes photoreal-player-converse {
+  0% { transform: translate3d(-1px, 1px, 0) rotate(-.08deg) scale(1); }
+  55% { transform: translate3d(0, -2px, 0) rotate(.05deg) scale(1.003); }
+  100% { transform: translate3d(2px, -3px, 0) rotate(.12deg) scale(1.005); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photoreal-person { animation: none; }
 }
 
 .local-hand-overlay {
