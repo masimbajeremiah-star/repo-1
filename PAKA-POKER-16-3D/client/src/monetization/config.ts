@@ -1,5 +1,6 @@
 export const PLUS_PRODUCT = Object.freeze({
-  id: 'paka-plus-monthly', name: 'PAKA Plus', price: 300, currency: 'KES', interval: 'month',
+  id: 'paka_plus_monthly', name: 'PAKA Plus', price: 100, currency: 'KES', interval: 'month',
+  trialDays: 30, platform: 'google_play',
 });
 
 export const MONETIZATION_FLAGS = Object.freeze({

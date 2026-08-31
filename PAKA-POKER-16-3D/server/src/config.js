@@ -37,6 +37,10 @@ export function loadConfig() {
       passkey: process.env.MPESA_PASSKEY || '',
       callbackUrl: process.env.MPESA_CALLBACK_URL || '',
     },
+    googlePlay: {
+      packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME || 'com.pakapoker.game16',
+      serviceAccountJson: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON || '',
+    },
   };
 
   const errors = [];

@@ -9,12 +9,14 @@ import { createRepository } from './src/services/repository.js';
 import { createAuthService } from './src/services/authService.js';
 import { createMpesaService } from './src/services/mpesaService.js';
 import { createMonetizationService } from './src/services/monetizationService.js';
+import { createGooglePlayService } from './src/services/googlePlayService.js';
 
 const config = loadConfig();
 const repository = await createRepository(config);
 const authService = createAuthService({ repository, secret: config.tokenSecret, ttlSeconds: config.tokenTtlSeconds });
 const mpesaService = createMpesaService({ config, repository });
-const monetizationService = createMonetizationService({ repository });
+const googlePlayService = createGooglePlayService(config);
+const monetizationService = createMonetizationService({ repository, googlePlayService });
 const app = express();
 const allowedOrigins = config.allowedOrigins;
 const corsOptions = {

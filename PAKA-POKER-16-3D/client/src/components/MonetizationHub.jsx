@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import PrimaryButton from '../ui/components/PrimaryButton';
 import { MONETIZATION_FLAGS, PLUS_PRODUCT, REVENUE_SCENARIOS } from '../monetization/config';
 import { trackMonetizationEvent } from '../monetization/analytics';
-import { pendingPlatformBillingProvider } from '../services/monetizationService';
+import { googlePlayBillingProvider } from '../services/monetizationService';
 import { useMonetizationStore } from '../store/useMonetizationStore';
 
 const plusBenefits = ['No Ads', 'Premium Tables', 'Premium Avatars', 'Premium Card Backs', 'Advanced Statistics', 'Extended Match History', 'Match Replays', 'Private Clubs', 'Premium Profile Badge', 'Seasonal Cosmetics'];
@@ -23,7 +23,7 @@ export default function MonetizationHub({ initialView, onClose }) {
   const purchase = async () => {
     setMessage('');
     trackMonetizationEvent('subscription_started', { plan: PLUS_PRODUCT.id });
-    try { await pendingPlatformBillingProvider.purchase(PLUS_PRODUCT.id); }
+    try { await googlePlayBillingProvider.purchase(PLUS_PRODUCT.id); window.location.reload(); }
     catch (purchaseError) {
       trackMonetizationEvent('subscription_failed', { reason: 'provider_not_configured' });
       setMessage(purchaseError instanceof Error ? purchaseError.message : 'Purchase unavailable');
@@ -31,7 +31,7 @@ export default function MonetizationHub({ initialView, onClose }) {
   };
   const restore = async () => {
     setMessage('');
-    try { await pendingPlatformBillingProvider.restorePurchases(); }
+    try { await googlePlayBillingProvider.restorePurchases(); window.location.reload(); }
     catch (restoreError) { setMessage(restoreError instanceof Error ? restoreError.message : 'Restore unavailable'); }
   };
 
@@ -48,14 +48,15 @@ export default function MonetizationHub({ initialView, onClose }) {
         {!loading && view === 'plus' && <>
           <span className="hub-eyebrow">OPTIONAL DIGITAL MEMBERSHIP</span>
           <h2>PAKA PLUS</h2>
-          <p className="plus-price">KSh {PLUS_PRODUCT.price} <small>/ month</small></p>
+          <p className="plus-price">30 days free <small>then KSh {PLUS_PRODUCT.price} / month</small></p>
+          <p>Your Google Play subscription automatically renews monthly after the free trial unless you cancel before renewal. A valid payment method is required. Manage or cancel anytime in Google Play.</p>
           <p>Premium service and cosmetic benefits only. PAKA Plus never changes cards, draws, turns, matchmaking fairness, KADI, or winning.</p>
           <div className="benefit-grid">{plusBenefits.map((benefit) => <article key={benefit}><span>◆</span><strong>{benefit}</strong></article>)}</div>
           <div className="hub-actions">
-            <PrimaryButton disabled={isPlus || !MONETIZATION_FLAGS.plus} onClick={purchase}>{isPlus ? 'PAKA Plus Active' : 'Upgrade to PAKA Plus'}</PrimaryButton>
+            <PrimaryButton disabled={isPlus || !MONETIZATION_FLAGS.plus} onClick={purchase}>{isPlus ? 'PAKA Plus Active' : 'Start 30-Day Free Trial'}</PrimaryButton>
             <PrimaryButton onClick={restore}>Restore Purchases</PrimaryButton>
           </div>
-          <small>Apple/Google/web billing verification is pending. This screen cannot activate Plus locally.</small>
+          <small>Available in the Android app through Google Play Billing. iOS launch is currently paused. Trial eligibility is determined by Google Play.</small>
         </>}
         {!loading && view === 'profile' && <>
           <span className={`plan-badge ${isPlus ? 'plus' : ''}`}>{isPlus ? 'PLUS' : 'FREE'}</span>

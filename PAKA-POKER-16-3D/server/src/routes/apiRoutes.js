@@ -38,6 +38,10 @@ export function createMonetizationRouter({ authService, monetizationService }) {
   });
   monetization.post('/purchase', (_req, res) => res.status(501).json({ error: 'Platform billing is not configured yet. No subscription was created.' }));
   monetization.post('/restore', (_req, res) => res.status(501).json({ error: 'Purchase restoration requires a configured platform billing provider.' }));
+  monetization.post('/google-play/verify', async (req, res, next) => {
+    try { return res.json(await monetizationService.verifyGooglePlayPurchase(req.authUserId, req.body || {})); }
+    catch (error) { return error.statusCode ? res.status(error.statusCode).json({ error: error.message }) : next(error); }
+  });
   return monetization;
 }
 

@@ -45,3 +45,18 @@ test('subscription state has no path into draw, legal play, KADI, turns, or winn
   assert.deepEqual(freeState.turnOrder, plusState.turnOrder);
   assert.equal(freeState.winnerId, plusState.winnerId);
 });
+
+test('Google Play verification is authoritative before Plus is granted', async () => {
+  const repository = await createRepository({ databaseUrl: '', requireDatabase: false });
+  await repository.createUser({ id: 'play-user', displayName: 'Play', authType: 'guest' });
+  const verified = { plan: 'plus', status: 'active', provider: 'google_play', providerSubscriptionId: 'verified-token', currentPeriodEnd: future(), cancelAtPeriodEnd: false };
+  const googlePlayService = { async verifySubscription(input) {
+    assert.equal(input.purchaseToken, 'verified-token');
+    return verified;
+  } };
+  const service = createMonetizationService({ repository, googlePlayService });
+  const account = await service.verifyGooglePlayPurchase('play-user', { purchaseToken: 'verified-token' });
+  assert.equal(account.subscription.provider, 'google_play');
+  assert.equal(account.entitlements.plan, 'plus');
+  await repository.close();
+});

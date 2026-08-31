@@ -25,6 +25,13 @@ export async function createRepository({ databaseUrl, requireDatabase = false })
         return (await pool.query(`SELECT plan,status,provider,current_period_start AS "currentPeriodStart",current_period_end AS "currentPeriodEnd",cancel_at_period_end AS "cancelAtPeriodEnd"
           FROM public.subscriptions WHERE user_id=$1 ORDER BY current_period_end DESC NULLS LAST,created_at DESC LIMIT 1`, [userId])).rows[0] || null;
       },
+      async upsertSubscription(userId, input) {
+        await pool.query(`INSERT INTO public.subscriptions(user_id,plan,status,provider,provider_subscription_id,current_period_start,current_period_end,cancel_at_period_end)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+          ON CONFLICT(provider,provider_subscription_id) WHERE provider_subscription_id IS NOT NULL
+          DO UPDATE SET plan=EXCLUDED.plan,status=EXCLUDED.status,current_period_start=EXCLUDED.current_period_start,current_period_end=EXCLUDED.current_period_end,cancel_at_period_end=EXCLUDED.cancel_at_period_end,updated_at=NOW()`,
+          [userId,input.plan,input.status,input.provider,input.providerSubscriptionId,input.currentPeriodStart,input.currentPeriodEnd,input.cancelAtPeriodEnd]);
+      },
       async listCosmetics(userId) {
         return (await pool.query(`SELECT item.slug,item.name,item.category,item.description,item.price,item.currency,item.premium_only AS "premiumOnly",
           (owned.cosmetic_id IS NOT NULL) AS owned,(equipped.cosmetic_id IS NOT NULL) AS equipped
@@ -132,6 +139,7 @@ export async function createRepository({ databaseUrl, requireDatabase = false })
     async createUser(input) { if (input.email && emails.has(input.email)) throw new Error('Email already registered'); users.set(input.id, { ...input, createdAt: new Date(), updatedAt: new Date() }); if (input.email) emails.set(input.email, input.id); wallets.set(input.id, STARTING_CHIPS); return publicUser(users.get(input.id)); },
     async getWallet(id) { return wallets.get(id) ?? STARTING_CHIPS; },
     async getCurrentSubscription(id) { return subscriptions.get(id) || null; },
+    async upsertSubscription(id, subscription) { subscriptions.set(id, subscription); },
     async listCosmetics(id) { return cosmeticItems.map((item) => ({ ...item, owned: false, equipped: equippedCosmetics.get(`${id}:${item.category}`) === item.slug })); },
     async equipCosmetic(id, slug, entitlements) {
       const item = cosmeticItems.find((candidate) => candidate.slug === slug);

@@ -1,9 +1,11 @@
 export const PLUS_PRODUCT = Object.freeze({
-  id: 'paka-plus-monthly',
+  id: 'paka_plus_monthly',
   name: 'PAKA Plus',
-  price: 300,
+  price: 100,
   currency: 'KES',
   interval: 'month',
+  trialDays: 30,
+  platform: 'google_play',
 });
 
 const FREE_ENTITLEMENTS = Object.freeze({
@@ -25,7 +27,7 @@ export function resolveEntitlements(subscription, now = new Date()) {
   return { ...(valid ? PLUS_ENTITLEMENTS : FREE_ENTITLEMENTS) };
 }
 
-export function createMonetizationService({ repository }) {
+export function createMonetizationService({ repository, googlePlayService }) {
   return {
     async getAccount(userId) {
       const subscription = await repository.getCurrentSubscription(userId);
@@ -48,6 +50,12 @@ export function createMonetizationService({ repository }) {
       const entitlements = resolveEntitlements(await repository.getCurrentSubscription(userId));
       if (!entitlements.privateClubs) throw Object.assign(new Error('PAKA Plus is required to create a club'), { statusCode: 403 });
       return repository.createClub(userId, input);
+    },
+    async verifyGooglePlayPurchase(userId, input) {
+      if (!googlePlayService) throw Object.assign(new Error('Google Play purchase verification is not configured'), { statusCode: 503 });
+      const subscription = await googlePlayService.verifySubscription(input);
+      await repository.upsertSubscription(userId, subscription);
+      return this.getAccount(userId);
     },
   };
 }
