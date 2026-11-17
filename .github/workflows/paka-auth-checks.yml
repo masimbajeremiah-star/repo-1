@@ -1,3 +1,6 @@
+permissions:
+  contents: write
+
 name: PAKA POWER 16 3D checks
 
 on:
@@ -44,3 +47,26 @@ jobs:
           cache-dependency-path: PAKA-POKER-16-3D/client/package-lock.json
       - run: npm ci
       - run: npm run build
+
+  deploy-web:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [server, client]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: PAKA-POKER-16-3D/client/package-lock.json
+      - name: Build PAKA POWER 16 3D web app
+        working-directory: PAKA-POKER-16-3D/client
+        run: |
+          npm ci
+          npm run build
+      - name: Publish tested web build to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: PAKA-POKER-16-3D/client/dist
