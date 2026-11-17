@@ -630,3 +630,115 @@ button {
   outline: 2px solid #60a5fa;
   outline-offset: 3px;
 }
+
+
+/* User testing feedback button and contact dialog */
+.feedback-launcher {
+  position: fixed;
+  z-index: 3000;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 50px;
+  padding: 0 20px;
+  border: 2px solid #fff0b8;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #8f102d, #c42743 55%, #771022);
+  color: #fff8e6;
+  box-shadow: 0 8px 28px rgba(0,0,0,.55), 0 0 0 3px rgba(212,175,55,.2);
+  font-size: .78rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.feedback-launcher > span:first-child { font-size: 1.2rem; }
+.feedback-launcher:hover { filter: brightness(1.12); transform: translateY(-2px); }
+.feedback-launcher:focus-visible, .feedback-dialog a:focus-visible, .feedback-close:focus-visible {
+  outline: 3px solid #ffe28a;
+  outline-offset: 3px;
+}
+.feedback-backdrop {
+  position: fixed;
+  z-index: 3100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: rgba(5,4,5,.82);
+  backdrop-filter: blur(9px);
+}
+.feedback-dialog {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  width: min(480px,100%);
+  max-height: min(760px,calc(100dvh - 32px));
+  overflow-y: auto;
+  padding: clamp(22px,5vw,32px);
+  border: 1px solid rgba(232,190,83,.72);
+  border-radius: 22px;
+  background: linear-gradient(155deg,#fffdf6,#f0dfb7);
+  color: #281a06;
+  box-shadow: 0 30px 90px rgba(0,0,0,.58);
+}
+.feedback-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: #3a2110;
+  color: white;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+.feedback-eyebrow { padding-right: 38px; color: #8c5510; font-size: .68rem; font-weight: 950; letter-spacing: .12em; }
+.feedback-dialog h2 { margin: 0; color: #321d08; font-family: Georgia,serif; font-size: clamp(1.7rem,5vw,2.2rem); line-height: 1.05; }
+.feedback-dialog p { margin: 0; color: #6d5229; font-size: .9rem; line-height: 1.5; }
+.feedback-dialog label { margin-top: 5px; color: #503508; font-size: .82rem; font-weight: 900; }
+.feedback-dialog textarea {
+  width: 100%;
+  min-height: 125px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid #c7a45d;
+  border-radius: 12px;
+  background: #fff;
+  color: #21180d;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.feedback-dialog textarea:focus { outline: 3px solid rgba(212,166,64,.3); border-color: #9b6708; }
+.feedback-send-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 3px; }
+.feedback-send-options a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px;
+  border-radius: 12px;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  font-size: .84rem;
+  font-weight: 900;
+}
+.feedback-email-link { background: linear-gradient(135deg,#57370b,#9a6915); }
+.feedback-whatsapp-link { background: linear-gradient(135deg,#087d4a,#16a765); }
+.feedback-contact-details { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid rgba(137,93,17,.2); border-radius: 10px; background: rgba(255,255,255,.55); color: #684a1e; font-size: .74rem; overflow-wrap: anywhere; }
+.feedback-dialog > small { color: #806a46; font-size: .72rem; line-height: 1.4; }
+@media (max-width: 480px) {
+  .feedback-launcher { right: max(10px,env(safe-area-inset-right)); bottom: max(12px,env(safe-area-inset-bottom)); min-height: 46px; padding: 0 15px; font-size: .72rem; }
+  .feedback-send-options { grid-template-columns: 1fr; }
+}
