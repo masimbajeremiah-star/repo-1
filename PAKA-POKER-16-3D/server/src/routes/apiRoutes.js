@@ -95,7 +95,7 @@ export function createAuthRouter(authService) {
   const reply = (res, result) => res.json({ token: result.token, user: result.user, chipBalance: result.wallet });
   auth.get('/session', async (req, res, next) => {
     try {
-      const token = String(req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+      const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
       const result = await authService.getSession(token);
       if (!result) return res.status(401).json({ error: 'Your session has expired. Please sign in again.' });
       return reply(res, result);
