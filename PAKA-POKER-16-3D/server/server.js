@@ -18,6 +18,9 @@ const mpesaService = createMpesaService({ config, repository });
 const googlePlayService = createGooglePlayService(config);
 const monetizationService = createMonetizationService({ repository, googlePlayService });
 const app = express();
+// Render terminates HTTPS in front of this service; trust its single proxy hop
+// so authentication rate limits see each player's real client IP.
+if (config.isProduction) app.set('trust proxy', 1);
 const allowedOrigins = config.allowedOrigins;
 const corsOptions = {
   origin: allowedOrigins,
