@@ -68,12 +68,52 @@ async function authenticate(path: string, body: Record<string, unknown>): Promis
     };
     throw new Error(typeof payload.error === 'string' ? payload.error : safeFallbacks[response.status] || 'Authentication is temporarily unavailable.');
   }
+  return storeIdentityFromPayload(payload);
+}
+
+function storeIdentityFromPayload(payload: Record<string, any>): AuthIdentity {
   if (!payload.token || !payload.user?.id || !payload.user?.displayName || !payload.user?.authType || !Number.isFinite(payload.chipBalance)) {
     throw new Error('The authentication service returned an incomplete response. Please try again.');
   }
-  const identity = { id: payload.user.id, name: payload.user.displayName, authType: payload.user.authType, token: payload.token, chipBalance: payload.chipBalance };
+  const identity: AuthIdentity = { id: payload.user.id, name: payload.user.displayName, authType: payload.user.authType, token: payload.token, chipBalance: payload.chipBalance };
   localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
   return identity;
+}
+
+export async function restoreIdentity(): Promise<AuthIdentity | null> {
+  const saved = getTestIdentity();
+  if (!saved?.token) return null;
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(`${getServerUrl()}/api/auth/session`, {
+      method: 'GET',
+      headers: { authorization: `Bearer ${saved.token}` },
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('The PAKA Poker server took too long to verify your session. Please try again.');
+    }
+    throw new Error('Unable to verify your saved session. Check your connection or sign in again.');
+  } finally {
+    window.clearTimeout(timeout);
+  }
+
+  const responseText = await response.text();
+  let payload: Record<string, any> = {};
+  try { payload = responseText ? JSON.parse(responseText) : {}; }
+  catch {
+    throw new Error('The authentication service returned an invalid session response.');
+  }
+
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) clearIdentity();
+    throw new Error(typeof payload.error === 'string' ? payload.error : 'Your saved session is no longer valid. Please sign in again.');
+  }
+  return storeIdentityFromPayload(payload);
 }
 
 export function saveTestIdentity(name: string) {
