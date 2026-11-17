@@ -1,0 +1,46 @@
+name: PAKA POWER 16 3D checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'PAKA-POKER-16-3D/client/**'
+      - 'PAKA-POKER-16-3D/server/**'
+      - '.github/workflows/paka-auth-checks.yml'
+  pull_request:
+    paths:
+      - 'PAKA-POKER-16-3D/client/**'
+      - 'PAKA-POKER-16-3D/server/**'
+      - '.github/workflows/paka-auth-checks.yml'
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: PAKA-POKER-16-3D/server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: PAKA-POKER-16-3D/server/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: PAKA-POKER-16-3D/client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: PAKA-POKER-16-3D/client/package-lock.json
+      - run: npm ci
+      - run: npm run build
