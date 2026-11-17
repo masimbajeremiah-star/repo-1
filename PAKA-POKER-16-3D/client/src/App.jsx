@@ -41,6 +41,7 @@ export default function App() {
           <h1>PAKA Poker 16 3D</h1>
           <p>Checking your saved player session…</p>
         </div>
+        <FeedbackPanel />
       </main>
     );
   }
@@ -72,6 +73,7 @@ export default function App() {
           {authError && <p className="auth-error" role="alert">{authError}</p>}
           <button disabled={loading} type="submit">{loading ? 'CONNECTING…' : mode === 'guest' ? 'ENTER AS GUEST' : mode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}</button>
         </form>
+        <FeedbackPanel />
       </main>
     );
   }
@@ -81,6 +83,67 @@ export default function App() {
         <Route path="/" element={<HomePage identity={identity} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <FeedbackPanel />
     </div>
+  );
+}
+
+function FeedbackPanel() {
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const feedbackMessage = message.trim() || 'I would like to share feedback about PAKA POWER 16 3D.';
+  const emailSubject = encodeURIComponent('PAKA POWER 16 3D – User Testing Feedback');
+  const emailBody = encodeURIComponent('Hello,\n\n' + feedbackMessage + '\n\nSent from PAKA POWER 16 3D user testing.');
+  const whatsappText = encodeURIComponent('Hello, I am testing PAKA POWER 16 3D.\n\n' + feedbackMessage);
+
+  return (
+    <>
+      <button
+        className="feedback-launcher"
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <span aria-hidden="true">✉</span>
+        <span>USER FEEDBACK</span>
+      </button>
+      {open && (
+        <div className="feedback-backdrop" onClick={(event) => {
+          if (event.target === event.currentTarget) setOpen(false);
+        }}>
+          <section className="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
+            <button className="feedback-close" type="button" onClick={() => setOpen(false)} aria-label="Close feedback">×</button>
+            <span className="feedback-eyebrow">PAKA POWER 16 3D · USER TESTING</span>
+            <h2 id="feedback-title">Help us improve the game</h2>
+            <p>Found a bug? Have an idea or suggestion? Send it directly to the developer.</p>
+            <label htmlFor="paka-feedback-message">Your comments or suggestions</label>
+            <textarea
+              id="paka-feedback-message"
+              rows={5}
+              maxLength={3000}
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder="Tell us what worked, what did not, or what you would like improved…"
+            />
+            <div className="feedback-send-options">
+              <a className="feedback-email-link" href={`mailto:masimbajeremiah@gmail.com?subject=${emailSubject}&body=${emailBody}`}>
+                <span aria-hidden="true">✉</span>
+                Send by Email
+              </a>
+              <a className="feedback-whatsapp-link" href={`https://wa.me/971553549577?text=${whatsappText}`} target="_blank" rel="noopener noreferrer">
+                <span aria-hidden="true">◉</span>
+                Send on WhatsApp
+              </a>
+            </div>
+            <div className="feedback-contact-details">
+              <span>Email: masimbajeremiah@gmail.com</span>
+              <span>WhatsApp: +971 55 354 9577</span>
+            </div>
+            <small>Your message opens in your email app or WhatsApp. Review it and tap Send there.</small>
+          </section>
+        </div>
+      )}
+    </>
   );
 }
