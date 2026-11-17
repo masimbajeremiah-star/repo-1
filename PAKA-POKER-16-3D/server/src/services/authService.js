@@ -46,6 +46,13 @@ export function createAuthService({ repository, secret, ttlSeconds }) {
 
   return {
     verifyToken: verify,
+    async getSession(token) {
+      const claims = verify(token);
+      if (!claims) return null;
+      const user = await repository.getUser(claims.sub);
+      if (!user) return null;
+      return { user, token, wallet: await repository.getWallet(user.id) };
+    },
     async createGuest(displayName, existingToken) {
       const existing = verify(existingToken);
       if (existing) {
