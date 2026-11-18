@@ -44,9 +44,9 @@ async function authenticate(path: string, body: Record<string, unknown>): Promis
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('The PAKA Poker server took too long to respond. Please try again.');
+      throw new Error('The PAKA POWER server took too long to respond. Please try again.');
     }
-    throw new Error('Unable to reach the PAKA Poker server. Check your connection and try again.');
+    throw new Error('Unable to reach the PAKA POWER server. Check your connection and try again.');
   } finally {
     window.clearTimeout(timeout);
   }
@@ -95,7 +95,7 @@ export async function restoreIdentity(): Promise<AuthIdentity | null> {
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('The PAKA Poker server took too long to verify your session. Please try again.');
+      throw new Error('The PAKA POWER server took too long to verify your session. Please try again.');
     }
     throw new Error('Unable to verify your saved session. Check your connection or sign in again.');
   } finally {
