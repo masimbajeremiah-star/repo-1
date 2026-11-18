@@ -173,7 +173,7 @@ export default function HomePage({ identity }) {
           <header className="lobby-appbar">
             <div className="lobby-brand">
               <img src={icons.logo} alt="" aria-hidden="true" />
-              <span><strong>PAKA POWER</strong><small>PLAY • CONNECT • COMPETE</small></span>
+              <span><strong>PAKA POWER</strong><small>KENYAN KADI • FRIENDS • FAMILY</small></span>
             </div>
             <button className="lobby-profile-button" type="button" onClick={() => setHubView('profile')} aria-label="Open player profile">
               <span>{(identity?.name || 'G').slice(0, 1).toUpperCase()}</span>
@@ -185,9 +185,9 @@ export default function HomePage({ identity }) {
             <div className="lobby-hero-copy">
               <span className="lobby-live-pill"><i /> LIVE MULTIPLAYER</span>
               <h1>Ready to call<br /><em>KADI?</em></h1>
-              <p>Join a table and enjoy Kenya's competitive card game for free.</p>
+              <p>Gather your friends, match your cards and enjoy a friendly game of KADI.</p>
               <aside className="free-play-notice lobby-free-notice" aria-label="Free game, no gambling">
-                <strong>100% FREE TO PLAY · NOT A GAMBLING APP</strong>
+                <strong>FREE KADI CARD GAME</strong>
                 <small>No betting, wagering, cash prizes or cash-out. No payment is required to play.</small>
               </aside>
               <div className="lobby-hero-actions">
@@ -202,12 +202,12 @@ export default function HomePage({ identity }) {
           </section>
 
           <nav className="lobby-feature-nav" aria-label="PAKA features">
-            <button type="button" className="play-selected"><span>♠</span>PLAY</button>
+            <button type="button" className="play-selected"><span>🂠</span>PLAY</button>
             {MONETIZATION_FLAGS.plus && <button type="button" onClick={() => setHubView('plus')}><span>★</span>PLUS</button>}
             <button type="button" onClick={() => setHubView('profile')}><span>●</span>PROFILE</button>
             {MONETIZATION_FLAGS.cosmetics && <button type="button" onClick={() => setHubView('cosmetics')}><span>◆</span>STYLE</button>}
-            <button type="button" onClick={() => setHubView('rankings')}><span>♛</span>RANKS</button>
-            {MONETIZATION_FLAGS.clubs && <button type="button" onClick={() => setHubView('clubs')}><span>♣</span>CLUBS</button>}
+            <button type="button" onClick={() => setHubView('rankings')}><span>🏆</span>RANKS</button>
+            {MONETIZATION_FLAGS.clubs && <button type="button" onClick={() => setHubView('clubs')}><span>👥</span>CLUBS</button>}
             {MONETIZATION_FLAGS.creators && <button type="button" onClick={() => setHubView('creators')}><span>✦</span>CREATORS</button>}
             <button type="button" onClick={() => setHubView('friends')}><span>●●</span>FRIENDS</button>
             <button type="button" onClick={() => setHubView('settings')}><span>⚙</span>SETTINGS</button>
@@ -215,15 +215,15 @@ export default function HomePage({ identity }) {
 
           <section className="lobby-tables-section">
             <div className="lobby-section-heading">
-              <div><span>PUBLIC ROOMS</span><h2>Choose a table</h2></div>
+              <div><span>OPEN KADI GAMES</span><h2>Join a friendly game</h2></div>
               <span className="lobby-connection"><i /> Online</span>
             </div>
             <div className="lobby-table-list" aria-live="polite">
               {tables.length === 0 ? (
-                <div className="lobby-empty-state"><span>♠</span><strong>No open tables yet</strong><p>Create the first room and invite another player.</p></div>
+                <div className="lobby-empty-state"><span>♥</span><strong>No open tables yet</strong><p>Create the first room and invite another player.</p></div>
               ) : tables.map((table) => (
                 <article key={table.id} className="lobby-table-row">
-                  <span className="table-suit" aria-hidden="true">♠</span>
+                  <span className="table-suit" aria-hidden="true">♥</span>
                   <div>
                     <strong>{table.name}</strong>
                     <span>{table.playerCount}/{table.maxPlayers} players · Free table</span>
