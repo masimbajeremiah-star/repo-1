@@ -169,7 +169,7 @@ export default function HomePage({ identity }) {
   if (!currentTable) {
     return (
       <main className="lobby-screen">
-        <section className="lobby-card" aria-label="PAKA Poker home">
+        <section className="lobby-card" aria-label="PAKA POWER home">
           <header className="lobby-appbar">
             <div className="lobby-brand">
               <img src={icons.logo} alt="" aria-hidden="true" />
@@ -235,7 +235,7 @@ export default function HomePage({ identity }) {
                 </article>
               ))}
             </div>
-            <p className="lobby-status" role="status">{actionMessage || 'Connected to the PAKA Poker server.'}</p>
+            <p className="lobby-status" role="status">{actionMessage || 'Connected to the PAKA POWER server.'}</p>
           </section>
 
           {MONETIZATION_FLAGS.ads && monetizationAccount?.entitlements.adsEnabled && <aside className="ad-placeholder" aria-label="Advertisement placement"><small>PAKA FREE · LOBBY AD PLACEMENT</small><span>Ads never interrupt an active turn.</span></aside>}
