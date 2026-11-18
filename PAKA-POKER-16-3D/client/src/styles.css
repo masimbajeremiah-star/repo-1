@@ -789,3 +789,13 @@ button {
   .quick-start-grid { gap: 7px; }
   .entry-card .quick-start-action { min-height: 50px; padding: 8px; gap: 7px; font-size: .75rem; }
 }
+
+
+/* Clear free-to-play / no-gambling disclosure */
+.free-play-notice { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid rgba(91, 220, 151, .55); border-radius: 12px; background: rgba(16, 110, 69, .18); color: #e8fff2; text-align: center; }
+.free-play-notice strong { color: #8df0b6; font-size: .9rem; font-weight: 950; letter-spacing: .08em; }
+.free-play-notice > span { color: #fff; font-size: .78rem; font-weight: 900; letter-spacing: .1em; }
+.free-play-notice small { color: #d0e9d9; font-size: .72rem; line-height: 1.4; }
+.lobby-free-notice { max-width: 480px; margin-top: 15px; text-align: left; }
+.lobby-free-notice strong { font-size: .76rem; }
+@media (max-width: 600px) { .lobby-free-notice { max-width: 88%; padding: 9px 11px; } .lobby-free-notice small { font-size: .66rem; } }
