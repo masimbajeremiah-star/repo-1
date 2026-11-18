@@ -171,7 +171,6 @@ export function createGameState() {
     round: 1,
     winnerId: null,
     gameOver: false,
-    settledWinnerId: null,
     direction: 1,
     pendingDraw: 0,
     kadiCalledPlayerIds: [],
@@ -333,7 +332,6 @@ export function startRound(state) {
   state.pile = [];
   state.gameOver = false;
   state.winnerId = null;
-  state.settledWinnerId = null;
   state.lastDrawnCard = null;
   state.direction = 1;
   state.pendingDraw = 0;
@@ -393,7 +391,6 @@ export function resetGame(state) {
   state.activePlayerIndex = 0;
   state.round += 1;
   state.winnerId = null;
-  state.settledWinnerId = null;
   state.gameOver = false;
   state.direction = 1;
   state.pendingDraw = 0;
