@@ -38,7 +38,7 @@ test('guest access creates a player and restores its saved session', async () =>
     const guest = await guestResponse.json();
     assert.equal(guest.user.authType, 'guest');
     assert.ok(guest.token);
-    assert.equal(guest.chipBalance, 1000);
+    assert.equal('chipBalance' in guest, false);
 
     const sessionResponse = await fetch(baseUrl + '/session', {
       headers: { authorization: 'Bearer ' + guest.token },
