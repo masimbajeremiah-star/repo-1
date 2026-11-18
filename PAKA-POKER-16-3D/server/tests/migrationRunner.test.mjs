@@ -42,8 +42,9 @@ test('legacy M-PESA migration is historical and the active repository has no dep
   const { readFile } = await import('node:fs/promises');
   const migration = await readFile(migrationUrl, 'utf8');
   const repository = await readFile(repositoryUrl, 'utf8');
-  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\\.mpesa_transactions/);
-  assert.doesNotMatch(repository, /public\\.mpesa_transactions|createMpesaTransaction|getMpesaTransaction|completeMpesaTransaction/);
+  assert.ok(migration.includes('CREATE TABLE IF NOT EXISTS public.mpesa_transactions'));
+  assert.ok(!repository.includes('public.mpesa_transactions'));
+  assert.doesNotMatch(repository, /createMpesaTransaction|getMpesaTransaction|completeMpesaTransaction/);
 });
 
 test('monetization migration is additive and contains authoritative entitlement foundations', async () => {
