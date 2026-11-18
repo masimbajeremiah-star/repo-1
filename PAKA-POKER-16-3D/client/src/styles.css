@@ -799,3 +799,126 @@ button {
 .lobby-free-notice { max-width: 480px; margin-top: 15px; text-align: left; }
 .lobby-free-notice strong { font-size: .76rem; }
 @media (max-width: 600px) { .lobby-free-notice { max-width: 88%; padding: 9px 11px; } .lobby-free-notice small { font-size: .66rem; } }
+
+
+/* KADI community-game visual system: welcoming, daylight, timber and leafy greens. */
+.lobby-screen {
+  background: radial-gradient(circle at 12% 0%, #f8f3e8 0, #e8e2d4 52%, #d8dfd5 100%);
+  color: #20332d;
+}
+.lobby-card {
+  border: 1px solid #d5d0c3;
+  border-radius: 22px;
+  background: #fbfaf5;
+  box-shadow: 0 18px 48px rgba(39, 55, 45, .13);
+}
+.lobby-appbar { border-bottom: 1px solid #e2ded2; }
+.lobby-brand strong { color: #245c4c; font-family: system-ui, sans-serif; letter-spacing: .055em; }
+.lobby-brand small { color: #63766b; letter-spacing: .1em; }
+.lobby-profile-button { border: 1px solid #d7ded5; background: #f0f3ed; color: #243a32; }
+.lobby-profile-button > span:first-child { background: #477d68; }
+.lobby-profile-button small { color: #477d68; }
+.lobby-hero {
+  background: linear-gradient(120deg, #17483d, #2e705b 58%, #6b8d6d);
+}
+.lobby-hero::before { display: none; }
+.lobby-live-pill { color: #e3f1d9; }
+.lobby-hero h1 em { color: #f4e7c8; }
+.lobby-hero p { color: #e4eee5; }
+.lobby-hero-actions .primary-button {
+  background: #f4e7c8;
+  color: #24483b;
+  box-shadow: 0 5px 14px rgba(13, 35, 27, .18);
+}
+.lobby-hero-actions > button:not(.primary-button) {
+  border-color: rgba(255,255,255,.45);
+  background: rgba(255,255,255,.1);
+  color: #fff;
+}
+.hero-card { box-shadow: 0 14px 28px rgba(9, 30, 22, .28); }
+.lobby-feature-nav { border-color: #e0e5db; background: #f1f3ec; }
+.lobby-feature-nav button { border-color: #e0e5db; color: #52675c; }
+.lobby-feature-nav button span { color: #3e795f; }
+.lobby-feature-nav button.play-selected {
+  background: #e0eee4;
+  color: #1e5944;
+  box-shadow: inset 0 -3px #43836a;
+}
+.lobby-section-heading span { color: #477d68; }
+.lobby-section-heading h2 { color: #203a30; font-family: system-ui, sans-serif; }
+.lobby-connection { border-color: #c9dfcf; background: #edf6ed; color: #376c4d !important; }
+.lobby-table-row { border-color: #e0e4d9; background: #fff; }
+.lobby-table-row .table-suit {
+  border-color: #d5e2d7;
+  background: #eef4ec;
+  color: #477d68;
+}
+.lobby-table-row div span, .lobby-status { color: #68796f; }
+.lobby-table-row .primary-button {
+  background: #477d68;
+  color: #fff;
+}
+.lobby-empty-state { border-color: #cbd9cc; color: #334c40; }
+.lobby-empty-state > span { color: #477d68; }
+.lobby-empty-state p { color: #6b7b70; }
+.free-play-notice { border-color: #c7ddcc; background: #edf6ed; color: #234d38; }
+.free-play-notice strong { color: #2f7651; }
+.free-play-notice > span { color: #234d38; }
+.free-play-notice small { color: #496b55; }
+
+.scene-panel { background: #d9d2c2; box-shadow: none; }
+.gameplay-status {
+  border: 1px solid rgba(65, 105, 82, .24);
+  background: rgba(248, 247, 239, .94);
+  color: #294538;
+  box-shadow: 0 8px 22px rgba(29, 53, 39, .14);
+}
+.control-hint { color: #477d68; }
+.suit-selector {
+  border: 1px solid #cad9cc;
+  background: rgba(250, 249, 242, .98);
+  color: #263e32;
+  box-shadow: 0 12px 30px rgba(29, 53, 39, .18);
+}
+.suit-selector button { border: 1px solid #9bb9a1; background: #edf4ec; color: #234d38; }
+.table-controls .primary-button {
+  border: 1px solid #477d68;
+  background: #477d68;
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(29, 53, 39, .2);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.table-controls .primary-button[data-game-action="draw-card"] {
+  border-color: #9c7545;
+  background: #e8d9bd;
+  color: #493b29;
+  box-shadow: 0 5px 14px rgba(29, 53, 39, .14);
+}
+.table-controls .primary-button[data-game-action="kadi"] {
+  border-color: #477d68;
+  background: #285d49;
+  color: #fff;
+}
+.table-controls .primary-button:disabled { background: #9ca99e; color: #eef1eb; border-color: #9ca99e; }
+.game-utility .primary-button, .player-identity-chip, .table-stat, .turn-banner, .game-settings-button, .game-settings-menu {
+  border-color: rgba(76, 112, 86, .28);
+  background: rgba(248, 247, 239, .94);
+  color: #294538;
+  box-shadow: 0 5px 16px rgba(29, 53, 39, .13);
+}
+.player-identity-chip small, .table-stat small, .turn-banner small, .local-player-copy small { color: #477d68; }
+.identity-avatar { border-color: #b8cfbc; background: #477d68; }
+.turn-banner.your-turn { border-color: #477d68; box-shadow: 0 0 0 3px rgba(71,125,104,.13), 0 0 20px rgba(71,125,104,.18); }
+.game-settings-menu button { color: #294538; }
+.game-settings-menu button:hover { background: #e8f0e7; }
+.local-player-panel {
+  border-color: #cad9cc;
+  background: rgba(248, 247, 239, .96);
+  color: #294538;
+  box-shadow: 0 8px 22px rgba(29, 53, 39, .16);
+}
+@media (max-width: 720px) {
+  .lobby-screen { background: #f1eee5; }
+  .lobby-card { background: #fbfaf5; }
+}
