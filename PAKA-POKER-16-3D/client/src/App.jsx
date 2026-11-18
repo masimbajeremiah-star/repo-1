@@ -68,7 +68,12 @@ export default function App() {
           <img src={icons.logo} alt="PAKA Poker 16" />
           <span className="welcome-eyebrow">KENYA'S MULTIPLAYER CARD EXPERIENCE</span>
           <h1>PAKA POWER <span>16 3D</span></h1>
-          <p className="welcome-intro">Play. Connect. Compete. Join friends at the table and call KADI. Free play is always available.</p>
+          <p className="welcome-intro">A free-to-play multiplayer card game for fun and friendly competition.</p>
+          <aside className="free-play-notice" aria-label="Free game, no gambling">
+            <strong>100% FREE TO PLAY</strong>
+            <span>NOT A GAMBLING APP</span>
+            <small>No real-money betting · No wagering · No deposits · No cash prizes</small>
+          </aside>
           <section className="quick-start" aria-label="Quick start">
             <h2>QUICK START</h2>
             <div className="quick-start-grid">
@@ -97,7 +102,7 @@ export default function App() {
                   <li>When you have one card left, call <strong>KADI!</strong> before the next player begins.</li>
                   <li>Play your final valid card to win the round.</li>
                 </ol>
-                <p>Keep it friendly, respect other players and enjoy the game. Deposits are optional.</p>
+                <p>PAKA POWER 16 3D is for entertainment only. There is no real-money betting, wagering, deposits or cash prizes.</p>
                 <button type="button" onClick={() => setShowHowTo(false)}>GOT IT</button>
               </section>
             </div>
