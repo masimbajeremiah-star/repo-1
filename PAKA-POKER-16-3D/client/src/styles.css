@@ -742,3 +742,50 @@ button {
   .feedback-launcher { right: max(10px,env(safe-area-inset-right)); bottom: max(12px,env(safe-area-inset-bottom)); min-height: 46px; padding: 0 15px; font-size: .72rem; }
   .feedback-send-options { grid-template-columns: 1fr; }
 }
+
+
+/* PAKA POWER welcome and quick-start experience */
+.entry-screen {
+  min-height: 100dvh;
+  padding: max(18px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  background: radial-gradient(circle at 50% 0%, #7b2435 0, #35101b 42%, #090609 100%);
+  color: #fff8e6;
+}
+.entry-card {
+  width: min(520px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(20px, 5vw, 32px);
+  border: 1px solid rgba(231, 190, 91, .42);
+  background: linear-gradient(155deg, rgba(44, 15, 23, .98), rgba(13, 9, 12, .98));
+}
+.entry-card > img { width: 76px; filter: drop-shadow(0 8px 18px rgba(0,0,0,.45)); }
+.entry-card h1 { color: #f4d27e; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.65rem, 6vw, 2.25rem); letter-spacing: .055em; }
+.entry-card h1 span { display: block; color: #fff8e6; font-size: .68em; letter-spacing: .22em; margin-top: 4px; }
+.entry-card .welcome-eyebrow { color: #e9c66e; text-align: center; font-size: .65rem; font-weight: 900; letter-spacing: .16em; }
+.entry-card .welcome-intro { color: #d9c9bd; font-size: .9rem; line-height: 1.5; }
+.quick-start { display: grid; gap: 10px; }
+.quick-start h2 { margin: 0; color: #f0cf7a; font-size: .72rem; letter-spacing: .16em; }
+.quick-start-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.entry-card .quick-start-action {
+  display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+  min-height: 54px; padding: 10px 13px; border: 1px solid rgba(231,190,91,.32);
+  border-radius: 13px; background: rgba(255,255,255,.055); color: #fff5d9;
+  font-size: .83rem; font-weight: 850; text-align: left; touch-action: manipulation;
+}
+.entry-card .quick-start-action.active { border-color: #f0cd73; background: rgba(212,175,55,.18); box-shadow: inset 0 0 0 1px rgba(240,205,115,.2); }
+.entry-card .quick-start-action:focus-visible, .entry-card button:focus-visible { outline: 3px solid #ffe39a; outline-offset: 3px; }
+.how-to-backdrop { position: fixed; z-index: 5000; inset: 0; display: grid; place-items: center; padding: max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom)); background: rgba(0,0,0,.78); backdrop-filter: blur(8px); }
+.how-to-dialog { position: relative; width: min(460px,100%); max-height: 90dvh; overflow-y: auto; padding: 28px 22px 22px; border: 1px solid rgba(231,190,91,.65); border-radius: 20px; background: linear-gradient(155deg,#32131c,#100b0e); color: #fff7e5; box-shadow: 0 24px 70px rgba(0,0,0,.6); }
+.how-to-dialog h2 { margin: 8px 38px 14px 0; color: #f3d17c; font-family: Georgia,serif; font-size: 1.7rem; }
+.how-to-dialog ol { display: grid; gap: 10px; padding-left: 22px; color: #eee0cb; font-size: .9rem; line-height: 1.45; }
+.how-to-dialog p { color: #d8c7b5; font-size: .84rem; line-height: 1.5; }
+.entry-card .how-to-dialog > button:last-child { width: 100%; margin-top: 8px; }
+.entry-card .how-to-close { position: absolute; top: 10px; right: 12px; width: 38px; min-height: 38px; border-radius: 50%; background: rgba(255,255,255,.12); color: white; font-size: 1.5rem; }
+@media (max-width: 380px) {
+  .entry-screen { padding-inline: 10px; }
+  .entry-card { padding: 18px 15px; gap: 11px; }
+  .quick-start-grid { gap: 7px; }
+  .entry-card .quick-start-action { min-height: 50px; padding: 8px; gap: 7px; font-size: .75rem; }
+}
