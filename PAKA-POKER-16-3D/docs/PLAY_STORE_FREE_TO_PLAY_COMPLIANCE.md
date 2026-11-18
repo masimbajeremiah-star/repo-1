@@ -43,6 +43,8 @@ Complete these declarations in Play Console yourself. A repository commit cannot
 
 ## Release checks still required
 
+Back up the production database, then apply the additive migration from the server directory with the production database connection configured: `npm run migrate`. Migration 004 only labels the old wallet/M-PESA tables as deprecated and updates legacy cosmetic descriptions; it does not delete historical records.
+
 Run server tests and the client production build, inspect the Android release bundle and screenshots, and test a full multiplayer round before uploading. Confirm no old installed backend deployment or alternate API route still exposes payment endpoints. These checks are not completed merely by committing source changes.
 
 ## Official Google Play policy references
