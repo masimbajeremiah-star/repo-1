@@ -52,6 +52,27 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+  live-backend-smoke:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [server, client]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live API health and retired M-PESA routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_url="https://paka-poker-api.onrender.com"
+          curl --fail --silent --show-error --retry 12 --retry-delay 10 --retry-all-errors "$base_url/health" -o /tmp/paka-health.json
+          status="$(curl --silent --show-error -o /tmp/paka-mpesa.json -w "%{http_code}" "$base_url/api/mpesa")"
+          if [[ "$status" != "404" ]]; then
+            echo "Expected retired /api/mpesa endpoint to return 404; received $status"
+            cat /tmp/paka-mpesa.json
+            exit 1
+          fi
+          echo "Live health endpoint responded successfully."
+          cat /tmp/paka-health.json
+          echo "Retired /api/mpesa endpoint returned 404 as expected."
+
   deploy-web:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [server, client]
