@@ -1,0 +1,66 @@
+name: PAKA POWER Android release build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'PAKA-POKER-16-3D/client/**'
+      - 'PAKA-POKER-16-3D/android/**'
+      - 'PAKA-POKER-16-3D/capacitor.config.ts'
+      - 'PAKA-POKER-16-3D/package.json'
+      - 'PAKA-POKER-16-3D/package-lock.json'
+      - '.github/workflows/android-release-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: PAKA-POKER-16-3D
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: PAKA-POKER-16-3D/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install project dependencies
+        run: npm ci
+
+      - name: Build production web assets
+        run: npm run client:build
+
+      - name: Sync Capacitor Android project
+        run: npx cap sync android
+
+      - name: Build Android debug APK and release AAB
+        working-directory: PAKA-POKER-16-3D/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug bundleRelease
+
+      - name: Upload Android build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: paka-power-android-${{ github.sha }}
+          if-no-files-found: error
+          path: |
+            PAKA-POKER-16-3D/android/app/build/outputs/apk/debug/app-debug.apk
+            PAKA-POKER-16-3D/android/app/build/outputs/bundle/release/app-release.aab
