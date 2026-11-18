@@ -9,7 +9,6 @@ import {
 import type { Card } from '../cards/Card';
 import {
   connectSocket,
-  refreshStoredWallet,
 } from '../services/socketService';
 
 function normalizeCard(input: unknown): Card | null {
@@ -176,10 +175,6 @@ export function useSocket() {
 
     const handleGameState = (state: unknown) => {
       setGameState(state as Parameters<typeof setGameState>[0]);
-      const typed = state as { players?: Array<{ id: string; chips: number }> };
-      const playerId = useGameStore.getState().clientId;
-      const local = typed.players?.find((player) => player.id === playerId);
-      if (local) refreshStoredWallet(local.chips);
     };
 
     const handlePlayersUpdate = (
