@@ -250,7 +250,7 @@ export default function HomePage({ identity }) {
       <header className="page-header">
         <div>
           <h1>PAKA POWER 16 3D</h1>
-          <p>3D poker lobby with live player state and card dealing.</p>
+          <p>3D KADI table with live players, card matching and card dealing.</p>
         </div>
         <div className="page-header-actions">
           <PrimaryButton onClick={dealCards}>Draw Card</PrimaryButton>
@@ -413,7 +413,7 @@ export default function HomePage({ identity }) {
               <button className="game-settings-button" type="button" aria-label="Game settings" aria-expanded={gameMenuOpen} onClick={() => setGameMenuOpen((open) => !open)}>⚙</button>
               {gameMenuOpen && (
                 <div className="game-settings-menu">
-                  <button type="button" onClick={() => { setGameMenuOpen(false); window.dispatchEvent(new Event('poker:resetCamera')); }}>Reset View</button>
+                  <button type="button" onClick={() => { setGameMenuOpen(false); window.dispatchEvent(new Event('kadi:resetCamera')); }}>Reset View</button>
                 </div>
               )}
             </div>
