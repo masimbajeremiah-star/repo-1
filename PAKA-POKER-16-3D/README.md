@@ -81,3 +81,12 @@ VITE_SOCKET_URL=http://localhost:3000
 ```
 
 If you move the backend to another host or port, update that value.
+
+
+## Free-to-play and no-gambling policy
+
+PAKA POWER 16 3D is a multiplayer KADI card game for entertainment. It has no entry fees, betting, wagering, player-funded pots, cash prizes, cash-out, or real-money game balances. A game result records statistics only. No payment is required to join or play a table.
+
+The optional Google Play PAKA Plus subscription is a separate digital membership for non-gameplay benefits. It does not change cards, draws, turns, matchmaking fairness, KADI rules, or winning. Do not describe the membership as a deposit, stake, or way to win money.
+
+See [docs/PLAY_STORE_FREE_TO_PLAY_COMPLIANCE.md](docs/PLAY_STORE_FREE_TO_PLAY_COMPLIANCE.md) before submitting a Play Store update.
