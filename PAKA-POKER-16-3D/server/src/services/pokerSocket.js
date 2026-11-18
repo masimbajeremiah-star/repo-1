@@ -1,6 +1,5 @@
 import { Server } from 'socket.io';
 import { randomUUID } from 'node:crypto';
-import { randomUUID } from 'node:crypto';
 
 import {
   addPlayer,
@@ -553,7 +552,6 @@ export function initPokerSocket(httpServer, { config, authService, repository })
 
       checkForWinner(state);
       await recordRoundResult(state);
-      await settleRound(state);
 
       if (!state.gameOver && !state.suitSelectionPlayerId) {
         getNextPlayer(state);
