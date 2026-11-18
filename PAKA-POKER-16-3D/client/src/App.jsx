@@ -38,8 +38,8 @@ export default function App() {
     return (
       <main className="entry-screen">
         <div className="entry-card">
-          <img src={icons.logo} alt="PAKA Poker 16" />
-          <h1>PAKA Poker 16 3D</h1>
+          <img src={icons.logo} alt="PAKA POWER 16" />
+          <h1>PAKA POWER 16 3D</h1>
           <p>Checking your saved player session…</p>
         </div>
         <FeedbackPanel />
@@ -65,7 +65,7 @@ export default function App() {
             setIdentity(result);
           } catch (error) { setAuthError(error instanceof Error ? error.message : 'Authentication failed'); } finally { setLoading(false); }
         }}>
-          <img src={icons.logo} alt="PAKA Poker 16" />
+          <img src={icons.logo} alt="PAKA POWER 16" />
           <span className="welcome-eyebrow">KENYA'S MULTIPLAYER CARD EXPERIENCE</span>
           <h1>PAKA POWER <span>16 3D</span></h1>
           <p className="welcome-intro">A free-to-play multiplayer card game for fun and friendly competition.</p>
