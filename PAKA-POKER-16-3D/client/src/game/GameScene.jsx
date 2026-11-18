@@ -1430,7 +1430,7 @@ export default function GameScene() {
     let disposed = false;
     let riggedDealerCharacter = null;
     if (!USE_PHOTOREAL_BACKGROUND) createRiggedPlayerCharacter({
-      player: { id: 'dealer', name: 'Dealer' },
+      player: { id: 'dealer', name: 'KADI Host' },
       position: [DEALER_POSITION.x, DEALER_POSITION.y, DEALER_POSITION.z],
       seatIndex: 0,
       dealer: true,
@@ -1819,7 +1819,7 @@ export default function GameScene() {
       const seat = USE_PHOTOREAL_BACKGROUND ? new THREE.Group() : createSeatMarker(position);
       const player = players.find((p) => p.id === playerId);
       // Keep the foreground clear: the local hand has priority over showing a
-      // body at the camera seat. Remote players remain visible beyond the felt.
+      // body at the camera seat. Remote players remain visible beyond the shared card table.
       const visiblePerson = player || null;
       if (!USE_PHOTOREAL_BACKGROUND && visiblePerson) {
         const fallback = createPlayerBust(visiblePerson, position);
