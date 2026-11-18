@@ -43,12 +43,17 @@ Complete these declarations in Play Console yourself. A repository commit cannot
 
 ## Release checks still required
 
-Back up the production database, then apply the additive migration from the server directory with the production database connection configured: `npm run migrate`. Migration 004 only labels the old wallet/M-PESA tables as deprecated and updates legacy cosmetic descriptions; it does not delete historical records.
+Back up the production database and verify the backup before applying the additive migration from `PAKA-POKER-16-3D/server` with the production database connection configured: `npm run migrate`. The Render blueprint intentionally no longer runs migrations automatically and no longer defines M-PESA environment variables. Migration 004 only labels the old wallet/M-PESA tables as deprecated and updates legacy cosmetic descriptions; it does not delete historical records.
 
-Run server tests and the client production build, inspect the Android release bundle and screenshots, and test a full multiplayer round before uploading. Confirm no old installed backend deployment or alternate API route still exposes payment endpoints. These checks are not completed merely by committing source changes.
+Run server tests and the client production build. The Android workflow now builds a debug APK for phone QA and an unsigned release AAB as CI artifacts; the AAB still needs the original Play signing key before upload. Inspect every Android screen, animation, icon and store asset to ensure the app is plainly KADI gameplay—not a casino simulation—and test guest login, email login and a complete multiplayer round on a physical phone before uploading. Confirm the live backend has redeployed and `/api/mpesa` plus its old STK Push/status/callback routes return 404. These checks are not completed merely by committing source changes.
 
 ## Official Google Play policy references
 
 - [Real-Money Gambling, Games, and Contests](https://support.google.com/googleplay/android-developer/answer/9877032)
 - [Prepare your app for review — App content declarations](https://support.google.com/googleplay/android-developer/answer/9859455)
 - [Common violations for gambling apps](https://support.google.com/googleplay/android-developer/answer/13381106)
+
+
+## KADI presentation requirement
+
+The live app, not just this listing text, must present an ordinary KADI card game. Do not ship casino furniture, chips, roulette/slot imagery, betting terminology, wagers, prize pools or cash-out affordances. Google Play policy prohibits simulated gambling content and restricts real-money wagering for apps that do not meet its eligibility requirements. Complete the content-rating questionnaire against the actual release build and answer simulated-gambling questions truthfully.
