@@ -30,11 +30,10 @@ const KADI_RAISE_MS = 300;
 const KADI_HOLD_MS = 2000;
 const KADI_LOWER_MS = 300;
 const KADI_TOTAL_MS = KADI_RAISE_MS + KADI_HOLD_MS + KADI_LOWER_MS;
-// The live gameplay scene uses the real optimized penthouse geometry. This is
-// presentation-only: all cards, seats and dealer motion still derive from the
-// server-authoritative store below.
-const USE_PENTHOUSE_PRESENTATION = false;
-const USE_PHOTOREAL_BACKGROUND = true;
+// The live KADI scene uses the procedural penthouse room and communal card table.
+// All cards, seats and card-host motion still derive from the server-authoritative store below.
+const USE_PENTHOUSE_PRESENTATION = true;
+const USE_PHOTOREAL_BACKGROUND = false;
 const ASSET_BASE_URL = String(import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 const PHOTOREAL_BACKGROUND_URL = `${ASSET_BASE_URL}/assets/environment/paka-photoreal-table-clean-v2.png`;
 const CELEBRATION_MS = 7500;
@@ -67,16 +66,16 @@ function disposeGroupChildren(group) {
 function createTable(scene, woodTexture) {
   const table = new THREE.Group();
   table.name = 'premium-paka-table-2026';
-  table.userData.design = 'sculpted-red-gold-penthouse';
+  table.userData.design = 'warm-walnut-community-kadi-table';
   const gold = new THREE.MeshPhysicalMaterial({
-    color: '#d7a82f', metalness: 0.96, roughness: 0.14, clearcoat: 1, clearcoatRoughness: 0.1,
+    color: '#8b6746', metalness: 0.06, roughness: 0.58, clearcoat: 0.08, clearcoatRoughness: 0.5,
   });
   const darkEdge = new THREE.MeshPhysicalMaterial({
-    color: '#130907', map: woodTexture || null, metalness: 0.22, roughness: 0.2, clearcoat: 1,
+    color: '#2a1a12', map: woodTexture || null, metalness: 0.02, roughness: 0.56, clearcoat: 0.08,
   });
-  const underbody = new THREE.MeshPhysicalMaterial({ color: '#3a160d', metalness: 0.52, roughness: 0.26, clearcoat: 0.7 });
-  const felt = new THREE.MeshStandardMaterial({ color: '#8d0d2a', roughness: 0.94, metalness: 0.01 });
-  const feltBorder = new THREE.MeshStandardMaterial({ color: '#5a0719', roughness: 0.86 });
+  const underbody = new THREE.MeshPhysicalMaterial({ color: '#4b2d1b', metalness: 0.04, roughness: 0.58, clearcoat: 0.08 });
+  const tableTop = new THREE.MeshStandardMaterial({ color: '#b98b5b', map: woodTexture || null, roughness: 0.82, metalness: 0.0 });
+  const tableTopEdge = new THREE.MeshStandardMaterial({ color: '#704a2d', roughness: 0.78 });
   const ivory = new THREE.MeshPhysicalMaterial({ color: '#fff0c7', metalness: 0.68, roughness: 0.2 });
 
   const ovalShape = (radiusX, radiusZ) => {
@@ -114,8 +113,8 @@ function createTable(scene, woodTexture) {
   addSculptedOval(5.86, 4.3, 0.72, underbody, 0.2, 0.2, 7).castShadow = true;
   addSculptedOval(5.72, 4.16, 0.24, gold, 0.46, 0.12, 5).castShadow = true;
   addSculptedOval(5.46, 3.92, 0.3, darkEdge, 0.62, 0.14, 6).castShadow = true;
-  addSculptedOval(5.12, 3.58, 0.16, feltBorder, 0.7, 0.08, 4).receiveShadow = true;
-  addSculptedOval(4.96, 3.42, 0.1, felt, 0.77, 0.045, 3).receiveShadow = true;
+  addSculptedOval(5.12, 3.58, 0.16, tableTopEdge, 0.7, 0.08, 4).receiveShadow = true;
+  addSculptedOval(4.96, 3.42, 0.1, tableTop, 0.77, 0.045, 3).receiveShadow = true;
 
   class EllipseRailCurve extends THREE.Curve {
     constructor(radiusX, radiusZ, y) {
@@ -138,17 +137,9 @@ function createTable(scene, woodTexture) {
   addRail(5.38, 3.87, 0.74, 0.28, darkEdge);
   addRail(5.12, 3.6, 0.76, 0.045, ivory, 96);
 
-  SEAT_ANCHORS.forEach((seat, index) => {
-    const direction = new THREE.Vector3(seat[0], 0, seat[2]).normalize();
-    const badge = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.055, 32), index === 0 ? ivory : gold);
-    badge.position.set(direction.x * 5.18, 0.91, direction.z * 3.72);
-    badge.rotation.x = Math.PI / 2;
-    table.add(badge);
-  });
-
   const actionZone = new THREE.Mesh(
     new THREE.RingGeometry(1.16, 1.66, 72),
-    new THREE.MeshBasicMaterial({ color: '#f4cc62', transparent: true, opacity: 0.3, side: THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({ color: '#78b8ad', transparent: true, opacity: 0.16, side: THREE.DoubleSide })
   );
   actionZone.rotation.x = -Math.PI / 2;
   actionZone.position.y = 0.84;
@@ -156,7 +147,7 @@ function createTable(scene, woodTexture) {
   table.add(actionZone);
   const innerActionZone = new THREE.Mesh(
     new THREE.RingGeometry(0.82, 0.87, 64),
-    new THREE.MeshBasicMaterial({ color: '#fff0b2', transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({ color: '#d9f0e9', transparent: true, opacity: 0.3, side: THREE.DoubleSide })
   );
   innerActionZone.rotation.x = -Math.PI / 2;
   innerActionZone.position.y = 0.845;
@@ -169,16 +160,16 @@ function createTable(scene, woodTexture) {
   const emblemContext = emblemCanvas.getContext('2d');
   if (emblemContext) {
     emblemContext.clearRect(0, 0, emblemCanvas.width, emblemCanvas.height);
-    emblemContext.strokeStyle = 'rgba(255, 226, 145, .78)';
+    emblemContext.strokeStyle = 'rgba(245, 232, 211, .78)';
     emblemContext.lineWidth = 5;
     emblemContext.strokeRect(18, 18, emblemCanvas.width - 36, emblemCanvas.height - 36);
-    emblemContext.fillStyle = '#ffe398';
+    emblemContext.fillStyle = '#f5e8d3';
     emblemContext.font = '900 72px Georgia';
     emblemContext.textAlign = 'center';
-    emblemContext.fillText('PAKA', 256, 92);
+    emblemContext.fillText('PAKA KADI', 256, 92);
     emblemContext.font = '700 25px Arial';
     emblemContext.letterSpacing = '8px';
-    emblemContext.fillText('POWER • PLAY • CONNECT • COMPETE', 256, 137);
+    emblemContext.fillText('MATCH • PLAY • CALL KADI', 256, 137);
     const emblemTexture = new THREE.CanvasTexture(emblemCanvas);
     emblemTexture.colorSpace = THREE.SRGBColorSpace;
     const emblem = new THREE.Mesh(
@@ -527,15 +518,15 @@ function setDealerHandWorldPosition(dealer, worldPosition) {
 function setDealerVisualState(dealer, state) {
   dealer.userData.visualState = state;
   const label = dealer.userData.stateLabel;
-  if (label) updateTurnLabel(label, `DEALER: ${state.replaceAll('_', ' ')}`);
-  if (import.meta.env.DEV) console.debug(`[DEALER] ${state}`);
+  if (label) updateTurnLabel(label, `KADI HOST: ${state.replaceAll('_', ' ')}`);
+  if (import.meta.env.DEV) console.debug(`[KADI HOST] ${state}`);
 }
 
 function createDealerCharacter() {
   const dealer = new THREE.Group();
   dealer.name = 'dealer-character';
   const skin = new THREE.MeshStandardMaterial({ color: '#b97852', roughness: 0.62 });
-  const jacket = new THREE.MeshPhysicalMaterial({ color: '#4c0b20', roughness: 0.34, clearcoat: 0.32 });
+  const jacket = new THREE.MeshPhysicalMaterial({ color: '#24465a', roughness: 0.58, clearcoat: 0.08 });
   const shirt = new THREE.MeshStandardMaterial({ color: '#fffdf8', roughness: 0.65 });
   const hairMaterial = new THREE.MeshStandardMaterial({ color: '#15110f', roughness: 0.88 });
 
@@ -544,8 +535,6 @@ function createDealerCharacter() {
   torso.scale.z = 0.68;
   const shirtFront = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 1.05), shirt);
   shirtFront.position.set(0, 2, 0.58);
-  const bowTie = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.08), new THREE.MeshStandardMaterial({ color: '#8f0f2f' }));
-  bowTie.position.set(0, 2.42, 0.62);
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.32, 16), skin);
   neck.position.y = 2.72;
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 28, 20), skin);
@@ -600,8 +589,8 @@ function createDealerCharacter() {
     lapel.position.set(x, 2.13, 0.59);
     dealer.add(lapel);
   });
-  dealer.add(torso, shirtFront, bowTie, neck, head, hair, nose, mouth, upperArm, forearm, hand, restingArm);
-  const dealerLabel = createTextSprite('DEALER');
+  dealer.add(torso, shirtFront, neck, head, hair, nose, mouth, upperArm, forearm, hand, restingArm);
+  const dealerLabel = createTextSprite('KADI HOST');
   if (dealerLabel) {
     dealerLabel.position.set(0, 3.85, 0);
     dealerLabel.scale.set(1.45, 0.4, 1);
@@ -1376,7 +1365,7 @@ export default function GameScene() {
       scene.add(fill);
     });
     // Soft front-facing portrait lights separate faces and wardrobe textures
-    // from the night skyline without flattening the red felt.
+    // from the night skyline without flattening the natural tabletop.
     [[-5.8, 3.4, 4.2], [0, 4.8, 2.8], [5.8, 3.4, 4.2]].forEach((position) => {
       const portraitLight = new THREE.SpotLight('#fff0d2', 7.5, 16, Math.PI / 5.5, 0.62, 1.25);
       portraitLight.position.set(...position);
@@ -1503,7 +1492,7 @@ export default function GameScene() {
         console.warn('Optional background audio failed to load:', error);
       }
       } catch (error) {
-        console.error('Unable to finish building the 3D poker scene:', error);
+        console.error('Unable to finish building the 3D KADI scene:', error);
       }
     };
 
@@ -1864,7 +1853,7 @@ export default function GameScene() {
       }
       seatGroup.add(seat);
       if (import.meta.env.DEV) {
-        console.debug('[Poker seat]', {
+        console.debug('[KADI seat]', {
           seatIndex: index,
           playerId: player?.id || null,
           worldPosition: [...position],
@@ -2060,8 +2049,8 @@ export default function GameScene() {
       ref={mountRef}
       className={`three-scene ${USE_PHOTOREAL_BACKGROUND ? 'photoreal-game-scene' : ''}`}
       style={USE_PHOTOREAL_BACKGROUND ? { backgroundImage: `url(${PHOTOREAL_BACKGROUND_URL})` } : undefined}
-      data-scene-version="paka-photoreal-lounge-2026"
-      aria-label="PAKA Poker photorealistic luxury skyline game table"
+      data-scene-version="paka-kadi-penthouse-2026"
+      aria-label="PAKA POWER 16 3D KADI card table"
     />
   );
 }
