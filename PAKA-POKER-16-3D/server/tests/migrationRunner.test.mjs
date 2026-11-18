@@ -36,16 +36,14 @@ test('migration failure rolls back, rejects, and never reports the failed file a
   assert.equal(queries.at(-1), 'ROLLBACK');
 });
 
-test('legacy M-PESA migration remains historical while active repository has no deposit queries', async () => {
+test('legacy M-PESA migration is historical and the active repository has no deposit queries', async () => {
   const migrationUrl = new URL('../migrations/002_mpesa_transactions.sql', import.meta.url);
   const repositoryUrl = new URL('../src/services/repository.js', import.meta.url);
   const { readFile } = await import('node:fs/promises');
   const migration = await readFile(migrationUrl, 'utf8');
   const repository = await readFile(repositoryUrl, 'utf8');
-  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.mpesa_transactions/);
-  assert.match(repository, /INSERT INTO public\.mpesa_transactions/);
-  assert.match(repository, /FROM public\.mpesa_transactions/);
-  assert.match(repository, /UPDATE public\.mpesa_transactions/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\\.mpesa_transactions/);
+  assert.doesNotMatch(repository, /public\\.mpesa_transactions|createMpesaTransaction|getMpesaTransaction|completeMpesaTransaction/);
 });
 
 test('monetization migration is additive and contains authoritative entitlement foundations', async () => {
