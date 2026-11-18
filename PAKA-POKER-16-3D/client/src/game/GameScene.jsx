@@ -188,10 +188,6 @@ function createCommunityHall(scene) {
   const floorMaterial = new THREE.MeshStandardMaterial({ color: '#c9b99d', roughness: 0.88 });
   const wallMaterial = new THREE.MeshStandardMaterial({ color: '#eee5d3', roughness: 0.92 });
   const timber = new THREE.MeshStandardMaterial({ color: '#765238', roughness: 0.78 });
-  const windowMaterial = new THREE.MeshPhysicalMaterial({
-    color: '#b9d9e7', transparent: true, opacity: 0.32, roughness: 0.2,
-    metalness: 0, side: THREE.DoubleSide, depthWrite: false,
-  });
   const green = new THREE.MeshStandardMaterial({ color: '#557b4e', roughness: 0.95 });
 
   const floor = new THREE.Mesh(new THREE.CircleGeometry(17, 96), floorMaterial);
@@ -278,9 +274,9 @@ function setDealerVisualState(dealer, state) {
 
 function createDealerCharacter() {
   const dealer = new THREE.Group();
-  dealer.name = 'dealer-character';
+  dealer.name = 'kadi-host-character';
   const skin = new THREE.MeshStandardMaterial({ color: '#b97852', roughness: 0.62 });
-  const jacket = new THREE.MeshPhysicalMaterial({ color: '#24465a', roughness: 0.58, clearcoat: 0.08 });
+  const jacket = new THREE.MeshPhysicalMaterial({ color: '#47765f', roughness: 0.82, clearcoat: 0.02 });
   const shirt = new THREE.MeshStandardMaterial({ color: '#fffdf8', roughness: 0.65 });
   const hairMaterial = new THREE.MeshStandardMaterial({ color: '#15110f', roughness: 0.88 });
 
@@ -336,7 +332,7 @@ function createDealerCharacter() {
     shoulder.position.set(x, 2.35, 0.02);
     dealer.add(shoulder);
   });
-  const lapelMaterial = new THREE.MeshStandardMaterial({ color: '#1b1820', roughness: 0.55 });
+  const lapelMaterial = new THREE.MeshStandardMaterial({ color: '#47765f', roughness: 0.82 });
   [-0.19, 0.19].forEach((x) => {
     const lapel = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.72, 3), lapelMaterial);
     lapel.rotation.z = x < 0 ? -0.2 : 0.2;
@@ -492,7 +488,7 @@ function createCardSpread(scene, faceMap, backTexture) {
 function createActivePlayerRing() {
   const geometry = new THREE.RingGeometry(1.28, 1.56, 64);
   const material = new THREE.MeshBasicMaterial({
-    color: '#ffd86b',
+    color: '#72b48b',
     transparent: true,
     opacity: 0.82,
     side: THREE.DoubleSide,
@@ -506,57 +502,6 @@ function createActivePlayerRing() {
 }
 
 
-function createPlayerBarrier(angle, radius = 5.25) {
-  const group = new THREE.Group();
-
-  // Gold-edged glass divider: a visual boundary; card privacy remains server-side.
-  const lowerMaterial = new THREE.MeshStandardMaterial({
-    color: '#d4a832',
-    metalness: 0.92,
-    roughness: 0.18,
-  });
-
-  const lower = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.18, 2.45),
-    lowerMaterial
-  );
-
-  lower.position.y = 0.52;
-  lower.castShadow = true;
-  lower.receiveShadow = true;
-
-  // Slightly transparent upper privacy screen
-  const glassMaterial = new THREE.MeshPhysicalMaterial({
-    color: '#d9f1ff',
-    transparent: true,
-    opacity: 0.22,
-    roughness: 0.18,
-    metalness: 0.12,
-    transmission: 0.72,
-    side: THREE.DoubleSide,
-  });
-
-  const upper = new THREE.Mesh(
-    new THREE.BoxGeometry(0.045, 0.62, 2.3),
-    glassMaterial
-  );
-
-  upper.position.y = 0.88;
-  upper.castShadow = true;
-
-  group.add(lower, upper);
-
-  group.position.set(
-    Math.sin(angle) * radius,
-    0,
-    Math.cos(angle) * radius
-  );
-
-  // Point the divider radially toward the table centre.
-  group.rotation.y = angle;
-
-  return group;
-}
 
 function createSeatMarker(position) {
   const base = new THREE.Mesh(
