@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import { createRepository } from '../src/services/repository.js';
 import { createAuthService } from '../src/services/authService.js';
 
-test('guest token restores the same account and wallet', async () => {
+test('guest token restores the same account without a wallet', async () => {
   const repository = await createRepository({ databaseUrl: '', requireDatabase: false });
   const auth = createAuthService({ repository, secret: 'test-secret-at-least-24-characters', ttlSeconds: 3600 });
   const first = await auth.createGuest('Persistent Guest');
   const restored = await auth.createGuest('Ignored Rename', first.token);
   assert.equal(restored.user.id, first.user.id);
-  assert.equal(restored.wallet, 1000);
+  assert.equal('wallet' in restored, false);
+  assert.equal(typeof repository.getWallet, 'undefined');
   await repository.close();
 });
 
@@ -32,14 +33,14 @@ test('expired and invalid authentication tokens are rejected', async () => {
   await repository.close();
 });
 
-test('wallet settlement is server-calculated and idempotent', async () => {
+test('game result statistics are idempotent and never settle player balances', async () => {
   const repository = await createRepository({ databaseUrl: '', requireDatabase: false });
   await repository.createUser({ id: 'one', displayName: 'One', authType: 'guest' });
   await repository.createUser({ id: 'two', displayName: 'Two', authType: 'guest' });
-  const settlement = { gameId: 'game-one', winnerId: 'one', participants: ['one', 'two'], changes: { one: 250, two: -50 } };
-  assert.deepEqual(await repository.settleGame(settlement), { one: 1250, two: 950 });
-  assert.equal(await repository.settleGame(settlement), null);
-  assert.equal(await repository.getWallet('one'), 1250);
-  assert.equal(await repository.getWallet('two'), 950);
+  assert.equal(typeof repository.getWallet, 'undefined');
+  assert.equal(typeof repository.settleGame, 'undefined');
+  const result = { gameId: 'game-one', winnerId: 'one', participants: ['one', 'two'] };
+  assert.equal(await repository.recordGameResult(result), true);
+  assert.equal(await repository.recordGameResult(result), false);
   await repository.close();
 });
