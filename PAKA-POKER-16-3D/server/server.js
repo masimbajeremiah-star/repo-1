@@ -3,18 +3,16 @@ import express from 'express';
 import { createServer } from 'http';
 import { initPokerSocket } from './src/services/pokerSocket.js';
 import apiRoutes from './src/routes/apiRoutes.js';
-import { createAuthRouter, createMonetizationRouter, createMpesaRouter } from './src/routes/apiRoutes.js';
+import { createAuthRouter, createMonetizationRouter } from './src/routes/apiRoutes.js';
 import { loadConfig } from './src/config.js';
 import { createRepository } from './src/services/repository.js';
 import { createAuthService } from './src/services/authService.js';
-import { createMpesaService } from './src/services/mpesaService.js';
 import { createMonetizationService } from './src/services/monetizationService.js';
 import { createGooglePlayService } from './src/services/googlePlayService.js';
 
 const config = loadConfig();
 const repository = await createRepository(config);
 const authService = createAuthService({ repository, secret: config.tokenSecret, ttlSeconds: config.tokenTtlSeconds });
-const mpesaService = createMpesaService({ config, repository });
 const googlePlayService = createGooglePlayService(config);
 const monetizationService = createMonetizationService({ repository, googlePlayService });
 const app = express();
@@ -37,14 +35,12 @@ app.use(express.json({ limit: '32kb' }));
 app.get('/health', async (_req, res) => {
   try {
     const database = await repository.schemaStatus();
-    if (!database.mpesaTransactions) return res.status(503).json({ status: 'error', database });
     return res.json({ status: 'ok', database });
   } catch {
-    return res.status(503).json({ status: 'error', database: { schema: 'unavailable', mpesaTransactions: false } });
+    return res.status(503).json({ status: 'error', database: { schema: 'unavailable' } });
   }
 });
 app.use('/api/auth', createAuthRouter(authService));
-app.use('/api/mpesa', createMpesaRouter({ authService, mpesaService }));
 app.use('/api/monetization', createMonetizationRouter({ authService, monetizationService }));
 
 // Mount API routes under /api
