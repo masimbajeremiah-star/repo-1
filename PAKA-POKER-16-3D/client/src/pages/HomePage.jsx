@@ -188,7 +188,7 @@ export default function HomePage({ identity }) {
               <p>Join a table and enjoy Kenya's competitive card game for free.</p>
               <aside className="free-play-notice lobby-free-notice" aria-label="Free game, no gambling">
                 <strong>100% FREE TO PLAY · NOT A GAMBLING APP</strong>
-                <small>No real-money betting, wagering, deposits or cash prizes.</small>
+                <small>No betting, wagering, cash prizes or cash-out. No payment is required to play.</small>
               </aside>
               <div className="lobby-hero-actions">
                 <PrimaryButton onClick={() => emitEvent('table.create', { name: `${identity?.name || 'Guest'}'s Table`, maxPlayers: 5 })}>Create a Table</PrimaryButton>
@@ -249,7 +249,7 @@ export default function HomePage({ identity }) {
     <div className="page-shell">
       <header className="page-header">
         <div>
-          <h1>PAKA Poker 16 3D</h1>
+          <h1>PAKA POWER 16 3D</h1>
           <p>3D poker lobby with live player state and card dealing.</p>
         </div>
         <div className="page-header-actions">
