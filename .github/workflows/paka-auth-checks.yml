@@ -9,6 +9,10 @@ on:
     paths:
       - 'PAKA-POKER-16-3D/client/**'
       - 'PAKA-POKER-16-3D/server/**'
+      - 'PAKA-POKER-16-3D/android/**'
+      - 'PAKA-POKER-16-3D/capacitor.config.ts'
+      - 'PAKA-POKER-16-3D/render.yaml'
+      - 'PAKA-POKER-16-3D/docs/**'
       - '.github/workflows/paka-auth-checks.yml'
   pull_request:
     paths:
