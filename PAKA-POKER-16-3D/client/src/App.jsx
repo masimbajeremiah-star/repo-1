@@ -13,6 +13,7 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showHowTo, setShowHowTo] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -65,13 +66,42 @@ export default function App() {
           } catch (error) { setAuthError(error instanceof Error ? error.message : 'Authentication failed'); } finally { setLoading(false); }
         }}>
           <img src={icons.logo} alt="PAKA Poker 16" />
-          <h1>PAKA Poker 16 3D</h1>
-          <p>Play freely as a guest or account holder. Optional M-PESA deposits never restrict gameplay.</p>
+          <span className="welcome-eyebrow">KENYA'S MULTIPLAYER CARD EXPERIENCE</span>
+          <h1>PAKA POWER <span>16 3D</span></h1>
+          <p className="welcome-intro">Play. Connect. Compete. Join friends at the table and call KADI. Free play is always available.</p>
+          <section className="quick-start" aria-label="Quick start">
+            <h2>QUICK START</h2>
+            <div className="quick-start-grid">
+              <button type="button" className={mode === 'guest' ? 'quick-start-action active' : 'quick-start-action'} onClick={() => { setMode('guest'); setAuthError(''); }}>♠ <span>Play as Guest</span></button>
+              <button type="button" className={mode === 'register' ? 'quick-start-action active' : 'quick-start-action'} onClick={() => { setMode('register'); setAuthError(''); }}>＋ <span>Create Account</span></button>
+              <button type="button" className={mode === 'login' ? 'quick-start-action active' : 'quick-start-action'} onClick={() => { setMode('login'); setAuthError(''); }}>↪ <span>Login</span></button>
+              <button type="button" className="quick-start-action" onClick={() => setShowHowTo(true)}>ⓘ <span>How to Play</span></button>
+            </div>
+          </section>
           <div className="auth-tabs">{['guest','login','register'].map((item) => <button className={mode === item ? 'selected' : ''} disabled={loading} type="button" key={item} onClick={() => { setMode(item); setAuthError(''); }}>{item}</button>)}</div>
           {mode !== 'login' && <><label htmlFor="player-name">Player name</label><input id="player-name" value={name} maxLength={32} autoComplete="nickname" onChange={(event) => setName(event.target.value)} placeholder="Guest" /></>}
           {mode !== 'guest' && <><label htmlFor="email">Email</label><input id="email" type="email" value={email} autoComplete="email" onChange={(event) => setEmail(event.target.value)} /><label htmlFor="password">Password</label><input id="password" type="password" minLength={mode === 'register' ? 10 : undefined} required value={password} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} onChange={(event) => setPassword(event.target.value)} /></>}
           {authError && <p className="auth-error" role="alert">{authError}</p>}
           <button disabled={loading} type="submit">{loading ? 'CONNECTING…' : mode === 'guest' ? 'ENTER AS GUEST' : mode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT'}</button>
+          {showHowTo && (
+            <div className="how-to-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setShowHowTo(false); }}>
+              <section className="how-to-dialog" role="dialog" aria-modal="true" aria-labelledby="how-to-title">
+                <button type="button" className="how-to-close" onClick={() => setShowHowTo(false)} aria-label="Close instructions">×</button>
+                <span className="welcome-eyebrow">PAKA POWER 16 3D</span>
+                <h2 id="how-to-title">How to Play KADI</h2>
+                <ol>
+                  <li>Choose Play as Guest or sign in to your account.</li>
+                  <li>Create a table or join an available public table.</li>
+                  <li>Match the top card by suit or rank. If you cannot play, draw a card.</li>
+                  <li>Use special cards strategically and follow the house rules at your table.</li>
+                  <li>When you have one card left, call <strong>KADI!</strong> before the next player begins.</li>
+                  <li>Play your final valid card to win the round.</li>
+                </ol>
+                <p>Keep it friendly, respect other players and enjoy the game. Deposits are optional.</p>
+                <button type="button" onClick={() => setShowHowTo(false)}>GOT IT</button>
+              </section>
+            </div>
+          )}
         </form>
         <FeedbackPanel />
       </main>
