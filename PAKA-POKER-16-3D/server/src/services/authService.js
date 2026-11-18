@@ -51,25 +51,25 @@ export function createAuthService({ repository, secret, ttlSeconds }) {
       if (!claims) return null;
       const user = await repository.getUser(claims.sub);
       if (!user) return null;
-      return { user, token, wallet: await repository.getWallet(user.id) };
+      return { user, token };
     },
     async createGuest(displayName, existingToken) {
       const existing = verify(existingToken);
       if (existing) {
         const user = await repository.getUser(existing.sub);
-        if (user) return { user, token: tokenFor(user), wallet: await repository.getWallet(user.id) };
+        if (user) return { user, token: tokenFor(user) };
       }
       const user = await repository.createUser({ id: randomUUID(), displayName, authType: 'guest' });
-      return { user, token: tokenFor(user), wallet: await repository.getWallet(user.id) };
+      return { user, token: tokenFor(user) };
     },
     async registerEmail(email, password, displayName) {
       const user = await repository.createUser({ id: randomUUID(), displayName, authType: 'email', email: email.toLowerCase(), passwordHash: await hashPassword(password) });
-      return { user, token: tokenFor(user), wallet: await repository.getWallet(user.id) };
+      return { user, token: tokenFor(user) };
     },
     async loginEmail(email, password) {
       const user = await repository.getUserByEmail(email.toLowerCase());
       if (!user || !(await verifyPassword(password, user.passwordHash))) return null;
-      return { user, token: tokenFor(user), wallet: await repository.getWallet(user.id) };
+      return { user, token: tokenFor(user) };
     },
   };
 }
