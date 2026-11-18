@@ -1543,7 +1543,7 @@ export default function GameScene() {
     resizeObserver.observe(mount);
     const resetCamera = () => setDefaultCamera();
     renderer.domElement.addEventListener('dblclick', resetCamera);
-    window.addEventListener('poker:resetCamera', resetCamera);
+    window.addEventListener('kadi:resetCamera', resetCamera);
     const demoCamera = (event) => {
       const stage = event.detail?.stage;
       controls.enabled = stage === 'IDLE' || stage === 'COMPLETE';
@@ -1554,7 +1554,7 @@ export default function GameScene() {
       controls.target.set(0, 1.15, 0);
       camera.lookAt(controls.target);
     };
-    window.addEventListener('poker:demoStage', demoCamera);
+    window.addEventListener('kadi:demoStage', demoCamera);
     const clock = new THREE.Clock();
     let animationFrameId;
     const animate = () => {
@@ -1699,8 +1699,8 @@ export default function GameScene() {
       if (riggedDealerCharacter) disposeRiggedCharacter(riggedDealerCharacter);
       controls.dispose();
       renderer.domElement.removeEventListener('dblclick', resetCamera);
-      window.removeEventListener('poker:resetCamera', resetCamera);
-      window.removeEventListener('poker:demoStage', demoCamera);
+      window.removeEventListener('kadi:resetCamera', resetCamera);
+      window.removeEventListener('kadi:demoStage', demoCamera);
       disposeCelebration(scene, celebrationRef.current);
       celebrationRef.current = null;
       cameraRef.current = null;
@@ -1708,7 +1708,7 @@ export default function GameScene() {
   }, []);
 
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('poker:demoStage', { detail: demoStatus }));
+    window.dispatchEvent(new CustomEvent('kadi:demoStage', { detail: demoStatus }));
     if (demoStatus.stage === 'IDLE' && celebrationRef.current && sceneRef.current) {
       disposeCelebration(sceneRef.current, celebrationRef.current);
       celebrationRef.current = null;
