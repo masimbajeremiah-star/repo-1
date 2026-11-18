@@ -30,7 +30,7 @@ const KADI_RAISE_MS = 300;
 const KADI_HOLD_MS = 2000;
 const KADI_LOWER_MS = 300;
 const KADI_TOTAL_MS = KADI_RAISE_MS + KADI_HOLD_MS + KADI_LOWER_MS;
-// The live KADI scene uses the procedural penthouse room and communal card table.
+// The live KADI scene uses a bright community hall and a shared wooden card table.
 // All cards, seats and card-host motion still derive from the server-authoritative store below.
 const USE_PHOTOREAL_BACKGROUND = false;
 const ASSET_BASE_URL = String(import.meta.env.BASE_URL || '/').replace(/\/$/, '');
@@ -1073,8 +1073,7 @@ export default function GameScene() {
     });
 
     if (USE_PHOTOREAL_BACKGROUND) {
-      // Lounge, table, seated guests and dealer are supplied by the approved
-      // photographic environment; WebGL renders only live game objects.
+      // Optional photographic environment; WebGL renders only live KADI game objects.
     } else {
       createCommunityHall(scene);
     }
@@ -1619,16 +1618,16 @@ export default function GameScene() {
     const remainingRatio = Math.min(1, Math.max(0, visualDeckCount) / 54);
     const stackHeight = visualDeckCount > 0 ? 0.11 + remainingRatio * 0.3 : 0;
     const backMap = cardBackRef.current;
-    const gold = new THREE.MeshStandardMaterial({ color: '#d4af37', metalness: 0.9, roughness: 0.2 });
-    const black = new THREE.MeshPhysicalMaterial({ color: '#050608', roughness: 0.34, clearcoat: 0.48, clearcoatRoughness: 0.18 });
-    const tray = new THREE.Mesh(new THREE.BoxGeometry(CARD_WIDTH + 0.13, 0.035, CARD_LENGTH + 0.13), gold);
+    const wood = new THREE.MeshStandardMaterial({ color: '#8a6749', roughness: 0.84, metalness: 0 });
+    const cardEdges = new THREE.MeshStandardMaterial({ color: '#f3efe5', roughness: 0.72 });
+    const tray = new THREE.Mesh(new THREE.BoxGeometry(CARD_WIDTH + 0.13, 0.035, CARD_LENGTH + 0.13), wood);
     tray.position.y = 0.017;
     deckGroup.add(tray);
     if (stackHeight > 0) {
-      const stackBody = new THREE.Mesh(new THREE.BoxGeometry(CARD_WIDTH, stackHeight, CARD_LENGTH), black);
+      const stackBody = new THREE.Mesh(new THREE.BoxGeometry(CARD_WIDTH, stackHeight, CARD_LENGTH), cardEdges);
       stackBody.position.y = 0.035 + stackHeight / 2;
       stackBody.castShadow = true;
-      const edge = new THREE.MeshStandardMaterial({ color: '#08090c', roughness: 0.42 });
+      const edge = cardEdges;
       const top = new THREE.MeshStandardMaterial({ map: backMap, color: '#17191f', roughness: 0.4, metalness: 0.08 });
       const topCard = new THREE.Mesh(
         new THREE.BoxGeometry(CARD_WIDTH, CARD_THICKNESS, CARD_LENGTH),
