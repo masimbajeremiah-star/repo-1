@@ -65,10 +65,10 @@ function disposeGroupChildren(group) {
 
 function createTable(scene, woodTexture) {
   const table = new THREE.Group();
-  table.name = 'premium-paka-table-2026';
+  table.name = 'paka-community-kadi-table';
   table.userData.design = 'warm-walnut-community-kadi-table';
   const gold = new THREE.MeshPhysicalMaterial({
-    color: '#8b6746', metalness: 0.06, roughness: 0.58, clearcoat: 0.08, clearcoatRoughness: 0.5,
+    color: '#765238', metalness: 0, roughness: 0.82, clearcoat: 0.02, clearcoatRoughness: 0.8,
   });
   const darkEdge = new THREE.MeshPhysicalMaterial({
     color: '#2a1a12', map: woodTexture || null, metalness: 0.02, roughness: 0.56, clearcoat: 0.08,
@@ -76,7 +76,7 @@ function createTable(scene, woodTexture) {
   const underbody = new THREE.MeshPhysicalMaterial({ color: '#4b2d1b', metalness: 0.04, roughness: 0.58, clearcoat: 0.08 });
   const tableTop = new THREE.MeshStandardMaterial({ color: '#b98b5b', map: woodTexture || null, roughness: 0.82, metalness: 0.0 });
   const tableTopEdge = new THREE.MeshStandardMaterial({ color: '#704a2d', roughness: 0.78 });
-  const ivory = new THREE.MeshPhysicalMaterial({ color: '#fff0c7', metalness: 0.68, roughness: 0.2 });
+  const ivory = new THREE.MeshPhysicalMaterial({ color: '#d8c8ad', metalness: 0, roughness: 0.86 });
 
   const ovalShape = (radiusX, radiusZ) => {
     const shape = new THREE.Shape();
@@ -133,13 +133,12 @@ function createTable(scene, woodTexture) {
     rail.castShadow = true;
     table.add(rail);
   };
-  addRail(5.53, 4.0, 0.7, 0.22, gold);
-  addRail(5.38, 3.87, 0.74, 0.28, darkEdge);
-  addRail(5.12, 3.6, 0.76, 0.045, ivory, 96);
+  addRail(5.46, 3.92, 0.7, 0.16, darkEdge);
+  addRail(5.12, 3.6, 0.74, 0.035, ivory, 96);
 
   const actionZone = new THREE.Mesh(
     new THREE.RingGeometry(1.16, 1.66, 72),
-    new THREE.MeshBasicMaterial({ color: '#78b8ad', transparent: true, opacity: 0.16, side: THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({ color: '#4b8b75', transparent: true, opacity: 0.1, side: THREE.DoubleSide })
   );
   actionZone.rotation.x = -Math.PI / 2;
   actionZone.position.y = 0.84;
@@ -147,7 +146,7 @@ function createTable(scene, woodTexture) {
   table.add(actionZone);
   const innerActionZone = new THREE.Mesh(
     new THREE.RingGeometry(0.82, 0.87, 64),
-    new THREE.MeshBasicMaterial({ color: '#d9f0e9', transparent: true, opacity: 0.3, side: THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({ color: '#dcebe0', transparent: true, opacity: 0.18, side: THREE.DoubleSide })
   );
   innerActionZone.rotation.x = -Math.PI / 2;
   innerActionZone.position.y = 0.845;
@@ -160,7 +159,7 @@ function createTable(scene, woodTexture) {
   const emblemContext = emblemCanvas.getContext('2d');
   if (emblemContext) {
     emblemContext.clearRect(0, 0, emblemCanvas.width, emblemCanvas.height);
-    emblemContext.strokeStyle = 'rgba(245, 232, 211, .78)';
+    emblemContext.strokeStyle = 'rgba(245, 232, 211, .48)';
     emblemContext.lineWidth = 5;
     emblemContext.strokeRect(18, 18, emblemCanvas.width - 36, emblemCanvas.height - 36);
     emblemContext.fillStyle = '#f5e8d3';
@@ -240,98 +239,72 @@ function createMarbleTexture() {
   return texture;
 }
 
-function createPenthouse(scene) {
+function createCommunityHall(scene) {
   const room = new THREE.Group();
-  room.name = 'paka-77th-floor-penthouse';
-  const marbleTexture = createMarbleTexture();
-  const marble = new THREE.MeshPhysicalMaterial({
-    map: marbleTexture, color: '#f5f2ea', metalness: 0.08, roughness: 0.2, clearcoat: 0.9, clearcoatRoughness: 0.1,
+  room.name = 'paka-community-kadi-hall';
+
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: '#c9b99d', roughness: 0.88 });
+  const wallMaterial = new THREE.MeshStandardMaterial({ color: '#eee5d3', roughness: 0.92 });
+  const timber = new THREE.MeshStandardMaterial({ color: '#765238', roughness: 0.78 });
+  const windowMaterial = new THREE.MeshPhysicalMaterial({
+    color: '#b9d9e7', transparent: true, opacity: 0.32, roughness: 0.2,
+    metalness: 0, side: THREE.DoubleSide, depthWrite: false,
   });
-  const gold = new THREE.MeshPhysicalMaterial({ color: '#d6aa35', metalness: 0.94, roughness: 0.2 });
-  const white = new THREE.MeshStandardMaterial({ color: '#fffdf5', roughness: 0.36 });
-  const floor = new THREE.Mesh(new THREE.CylinderGeometry(15.4, 15.4, 0.35, 128), marble);
+  const green = new THREE.MeshStandardMaterial({ color: '#557b4e', roughness: 0.95 });
+
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(17, 96), floorMaterial);
+  floor.rotation.x = -Math.PI / 2;
   floor.position.y = -1.55;
   floor.receiveShadow = true;
   room.add(floor);
-  [7.5, 11.5, 15.4].forEach((radius) => {
-    const inlay = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.045, 8, 128), gold);
-    inlay.rotation.x = Math.PI / 2;
-    inlay.position.y = -1.35;
-    room.add(inlay);
-  });
-  for (let index = 0; index < 8; index += 1) {
-    const line = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.025, 31), gold);
-    line.position.y = -1.34;
-    line.rotation.y = (index / 8) * Math.PI;
-    room.add(line);
-  }
 
-  const ceiling = new THREE.Mesh(new THREE.CylinderGeometry(17, 17, 0.42, 128), white);
-  ceiling.position.y = 9.3;
-  room.add(ceiling);
-  [6, 10.5, 15.2].forEach((radius) => {
-    const molding = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.12, 12, 128), gold);
-    molding.rotation.x = Math.PI / 2;
-    molding.position.y = 9.05;
-    room.add(molding);
-  });
-
-  const glass = new THREE.MeshPhysicalMaterial({
-    color: '#315b82', transparent: true, opacity: 0.2, transmission: 0.72,
-    roughness: 0.05, metalness: 0.05, side: THREE.DoubleSide, depthWrite: false,
-  });
-  const cityTexture = createCityWindowTexture();
-  const cityMaterials = ['#111827', '#1d2940', '#101a30', '#27334b'].map((color) =>
-    new THREE.MeshStandardMaterial({ map: cityTexture, emissiveMap: cityTexture, color, emissive: '#c29152', emissiveIntensity: 0.78, roughness: 0.72 })
+  const backWall = new THREE.Mesh(
+    new THREE.CylinderGeometry(15.8, 15.8, 9.2, 96, 1, true, Math.PI * 0.16, Math.PI * 0.68),
+    new THREE.MeshStandardMaterial({ color: '#e8ddc8', side: THREE.BackSide, roughness: 0.95 })
   );
-  for (let index = 0; index < 28; index += 1) {
-    const angle = (index / 28) * Math.PI * 2;
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.18, 10.3, 0.22), index % 2 ? gold : white);
-    frame.position.set(Math.sin(angle) * 15.2, 3.85, Math.cos(angle) * 15.2);
-    frame.rotation.y = angle;
-    room.add(frame);
-    const pane = new THREE.Mesh(new THREE.PlaneGeometry(3.35, 10), glass);
-    pane.position.set(Math.sin(angle + 0.055) * 15.05, 3.75, Math.cos(angle + 0.055) * 15.05);
-    pane.rotation.y = angle + Math.PI / 2 + 0.055;
-    room.add(pane);
+  backWall.position.set(0, 3.0, -1.6);
+  room.add(backWall);
+
+  // Broad timber-framed windows look out onto a green garden in daylight.
+  const gardenSky = new THREE.MeshBasicMaterial({ color: '#b8d6cf', side: THREE.DoubleSide });
+  for (let index = 0; index < 9; index += 1) {
+    const angle = -0.72 + index * 0.18;
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 5.8), gardenSky);
+    panel.position.set(Math.sin(angle) * 13.7, 2.75, -Math.cos(angle) * 13.7);
+    panel.rotation.y = -angle;
+    room.add(panel);
+
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 7.0, 0.18), timber);
+    post.position.set(Math.sin(angle - 0.09) * 13.72, 2.8, -Math.cos(angle - 0.09) * 13.72);
+    post.rotation.y = -angle;
+    room.add(post);
   }
-  const towerGeometry = new THREE.BoxGeometry(1, 1, 1);
-  const towerMatrix = new THREE.Object3D();
-  cityMaterials.forEach((material, layer) => {
-    const count = 42;
-    const towers = new THREE.InstancedMesh(towerGeometry, material, count);
-    towers.name = `night-skyline-layer-${layer + 1}`;
-    for (let index = 0; index < count; index += 1) {
-      const globalIndex = layer * count + index;
-      const angle = (globalIndex / (count * cityMaterials.length)) * Math.PI * 2 + (index % 7) * 0.012;
-      const radius = 18.4 + layer * 4.4 + (index % 9) * 0.48;
-      const height = 5.6 + ((globalIndex * 17) % 18) * 0.58;
-      const width = 0.85 + ((globalIndex * 7) % 6) * 0.23;
-      const depth = 0.82 + ((globalIndex * 11) % 5) * 0.22;
-      towerMatrix.position.set(Math.sin(angle) * radius, -7.4 + height / 2, Math.cos(angle) * radius);
-      towerMatrix.rotation.y = -angle;
-      towerMatrix.scale.set(width, height, depth);
-      towerMatrix.updateMatrix();
-      towers.setMatrixAt(index, towerMatrix.matrix);
-    }
-    towers.instanceMatrix.needsUpdate = true;
-    room.add(towers);
-  });
-  for (let index = 0; index < 14; index += 1) {
-    const angle = (index / 14) * Math.PI * 2;
-    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 2.8, 8), gold);
-    antenna.position.set(Math.sin(angle) * 21.5, 6.2 + (index % 3), Math.cos(angle) * 21.5);
-    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: index % 2 ? '#ff4c65' : '#ffd57b' }));
-    beacon.position.copy(antenna.position).add(new THREE.Vector3(0, 1.45, 0));
-    room.add(antenna, beacon);
+
+  // Simple timber beams and wall lights create a welcoming community-room feel.
+  for (let index = 0; index < 8; index += 1) {
+    const angle = (index / 8) * Math.PI * 2;
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.22, 8.8, 0.28), timber);
+    beam.position.set(Math.sin(angle) * 14.5, 2.8, Math.cos(angle) * 14.5);
+    beam.rotation.y = -angle;
+    room.add(beam);
   }
-  const roadMaterial = new THREE.MeshBasicMaterial({ color: '#f5c451' });
-  for (let index = 0; index < 4; index += 1) {
-    const road = new THREE.Mesh(new THREE.TorusGeometry(23 + index * 2.2, 0.035, 6, 160), roadMaterial);
-    road.rotation.x = Math.PI / 2;
-    road.position.y = -7.2 - index * 0.3;
-    room.add(road);
+
+  // Garden greenery visible through the windows gives the scene a daytime, local feel.
+  for (let index = 0; index < 24; index += 1) {
+    const angle = -1.05 + (index / 23) * 2.1;
+    const bush = new THREE.Mesh(new THREE.SphereGeometry(0.75 + (index % 3) * 0.16, 10, 8), green);
+    bush.scale.y = 0.72;
+    bush.position.set(Math.sin(angle) * 12.4, -0.2 + (index % 2) * 0.12, -Math.cos(angle) * 12.4);
+    room.add(bush);
   }
+
+  const ceiling = new THREE.Mesh(
+    new THREE.CylinderGeometry(15.8, 15.8, 0.3, 96),
+    new THREE.MeshStandardMaterial({ color: '#f7f3e9', roughness: 0.9 })
+  );
+  ceiling.position.y = 7.8;
+  room.add(ceiling);
+
   scene.add(room);
 }
 
@@ -1348,9 +1321,9 @@ export default function GameScene() {
     pmremGenerator.dispose();
     mount.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight('#fff0d1', 0.58);
-    const hemisphereLight = new THREE.HemisphereLight('#526a91', '#8d5b32', 0.92);
-    const directionalLight = new THREE.DirectionalLight('#ffe2b0', 2.15);
+    const ambientLight = new THREE.AmbientLight('#fff8e9', 0.92);
+    const hemisphereLight = new THREE.HemisphereLight('#c9e5ee', '#9d8765', 1.05);
+    const directionalLight = new THREE.DirectionalLight('#fff2d7', 1.75);
     directionalLight.position.set(5, 11, 7);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.set(1024, 1024);
@@ -1360,7 +1333,7 @@ export default function GameScene() {
     directionalLight.shadow.camera.bottom = -13;
     scene.add(ambientLight, hemisphereLight, directionalLight);
     [[6.5, 4.2, 5.5], [-6.5, 4.2, 5.5]].forEach((position) => {
-      const fill = new THREE.PointLight('#ffc982', 4.2, 13, 2);
+      const fill = new THREE.PointLight('#fff0d2', 3.0, 13, 2);
       fill.position.set(...position);
       scene.add(fill);
     });
@@ -1377,8 +1350,7 @@ export default function GameScene() {
       // Lounge, table, seated guests and dealer are supplied by the approved
       // photographic environment; WebGL renders only live game objects.
     } else if (USE_PENTHOUSE_PRESENTATION) {
-      createPenthouse(scene);
-      createChandelier(scene);
+      createCommunityHall(scene);
     } else {
       createGameplayBackdrop(scene);
     }
@@ -2049,7 +2021,7 @@ export default function GameScene() {
       ref={mountRef}
       className={`three-scene ${USE_PHOTOREAL_BACKGROUND ? 'photoreal-game-scene' : ''}`}
       style={USE_PHOTOREAL_BACKGROUND ? { backgroundImage: `url(${PHOTOREAL_BACKGROUND_URL})` } : undefined}
-      data-scene-version="paka-kadi-penthouse-2026"
+      data-scene-version="paka-kadi-community-hall-2026"
       aria-label="PAKA POWER 16 3D KADI card table"
     />
   );
