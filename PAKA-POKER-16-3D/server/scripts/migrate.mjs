@@ -9,8 +9,8 @@ try {
     query: pool.query.bind(pool),
     onApplied: (file) => console.log(`Applied migration: ${file}`),
   });
-  const verification = await pool.query("SELECT to_regclass('public.mpesa_transactions') IS NOT NULL AS present");
-  if (verification.rows[0]?.present !== true) throw new Error('Required relation public.mpesa_transactions is missing after migrations');
+  const verification = await pool.query("SELECT to_regclass('public.users') IS NOT NULL AS present");
+  if (verification.rows[0]?.present !== true) throw new Error('Required relation public.users is missing after migrations');
   console.log(`Database migrations complete (${files.length} files)`);
 } finally {
   await pool.end();
