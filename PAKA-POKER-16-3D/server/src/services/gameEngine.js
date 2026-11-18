@@ -162,6 +162,7 @@ export function shuffleDeck(deck) {
 export function createGameState() {
   return {
     gameId: randomUUID(),
+    resultRecordedWinnerId: null;
     deck: shuffleDeck(createDeck()),
     players: [],
     turnOrder: [],
@@ -328,6 +329,7 @@ export function startRound(state) {
   // Rebuild and shuffle the deck for a fresh round.
   state.deck = shuffleDeck(createDeck());
   state.gameId = randomUUID();
+  state.resultRecordedWinnerId = null;
   state.pile = [];
   state.gameOver = false;
   state.winnerId = null;
