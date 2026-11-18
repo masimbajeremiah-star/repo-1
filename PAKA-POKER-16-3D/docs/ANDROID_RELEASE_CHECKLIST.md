@@ -24,6 +24,8 @@ The release must look and behave like a Kenyan KADI card game—not a casino or 
 - Round completion may record game statistics only.
 - Optional PAKA Plus must remain separate from card availability, draws, turns, matchmaking fairness and winning.
 
+Code-level visual changes in this release: the game scene now uses the procedural penthouse environment instead of the photoreal table background, a warm walnut communal card table instead of red felt, muted natural trim instead of metallic casino-style trim, no round seat-marker discs, and a visible KADI HOST label. The table emblem now says “PAKA KADI · MATCH · PLAY · CALL KADI.”
+
 Review every live screen, animation, icon, screenshot, video, notification, menu item and deep link—not just store-description wording. If any screen still resembles a casino or offers betting-like behavior, do not submit that build.
 
 ## Signing and build artifacts
