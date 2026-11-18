@@ -162,7 +162,7 @@ export function shuffleDeck(deck) {
 export function createGameState() {
   return {
     gameId: randomUUID(),
-    resultRecordedWinnerId: null;
+    resultRecordedWinnerId: null,
     deck: shuffleDeck(createDeck()),
     players: [],
     turnOrder: [],
