@@ -50,7 +50,7 @@ export default function MonetizationHub({ initialView, onClose }) {
           <h2>PAKA PLUS</h2>
           <p className="plus-price">30 days free <small>then KSh {PLUS_PRODUCT.price} / month</small></p>
           <p>Your Google Play subscription automatically renews monthly after the free trial unless you cancel before renewal. A valid payment method is required. Manage or cancel anytime in Google Play.</p>
-          <p>Premium service and cosmetic benefits only. PAKA Plus never changes cards, draws, turns, matchmaking fairness, KADI, or winning.</p>
+          <p>Optional Google Play membership for non-gameplay perks only. It never changes cards, draws, turns, matchmaking fairness, KADI, or winning. No entry fees, wagers, cash prizes or cash-out.</p>
           <div className="benefit-grid">{plusBenefits.map((benefit) => <article key={benefit}><span>◆</span><strong>{benefit}</strong></article>)}</div>
           <div className="hub-actions">
             <PrimaryButton disabled={isPlus || !MONETIZATION_FLAGS.plus} onClick={purchase}>{isPlus ? 'PAKA Plus Active' : 'Start 30-Day Free Trial'}</PrimaryButton>
