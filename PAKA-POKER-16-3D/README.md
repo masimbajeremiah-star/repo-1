@@ -1,4 +1,4 @@
-# PAKA Kadi 16 3D
+# PAKA POWER 16 3D
 
 ## Launch instructions
 
