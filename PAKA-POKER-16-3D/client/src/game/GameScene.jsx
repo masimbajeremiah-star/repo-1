@@ -32,7 +32,6 @@ const KADI_LOWER_MS = 300;
 const KADI_TOTAL_MS = KADI_RAISE_MS + KADI_HOLD_MS + KADI_LOWER_MS;
 // The live KADI scene uses the procedural penthouse room and communal card table.
 // All cards, seats and card-host motion still derive from the server-authoritative store below.
-const USE_PENTHOUSE_PRESENTATION = true;
 const USE_PHOTOREAL_BACKGROUND = false;
 const ASSET_BASE_URL = String(import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 const PHOTOREAL_BACKGROUND_URL = `${ASSET_BASE_URL}/assets/environment/paka-photoreal-table-clean-v2.png`;
@@ -67,7 +66,7 @@ function createTable(scene, woodTexture) {
   const table = new THREE.Group();
   table.name = 'paka-community-kadi-table';
   table.userData.design = 'warm-walnut-community-kadi-table';
-  const gold = new THREE.MeshPhysicalMaterial({
+  const woodTrim = new THREE.MeshPhysicalMaterial({
     color: '#765238', metalness: 0, roughness: 0.82, clearcoat: 0.02, clearcoatRoughness: 0.8,
   });
   const darkEdge = new THREE.MeshPhysicalMaterial({
@@ -109,9 +108,9 @@ function createTable(scene, woodTexture) {
   };
 
   addSculptedOval(2.65, 1.65, 1.32, underbody, -0.1, 0.24, 7).castShadow = true;
-  addSculptedOval(3.28, 2.1, 0.2, gold, -1.08, 0.12, 5).castShadow = true;
+  addSculptedOval(3.28, 2.1, 0.2, woodTrim, -1.08, 0.12, 5).castShadow = true;
   addSculptedOval(5.86, 4.3, 0.72, underbody, 0.2, 0.2, 7).castShadow = true;
-  addSculptedOval(5.72, 4.16, 0.24, gold, 0.46, 0.12, 5).castShadow = true;
+  addSculptedOval(5.72, 4.16, 0.24, woodTrim, 0.46, 0.12, 5).castShadow = true;
   addSculptedOval(5.46, 3.92, 0.3, darkEdge, 0.62, 0.14, 6).castShadow = true;
   addSculptedOval(5.12, 3.58, 0.16, tableTopEdge, 0.7, 0.08, 4).receiveShadow = true;
   addSculptedOval(4.96, 3.42, 0.1, tableTop, 0.77, 0.045, 3).receiveShadow = true;
@@ -182,63 +181,6 @@ function createTable(scene, woodTexture) {
   scene.add(table);
 }
 
-function createCityWindowTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  sky.addColorStop(0, '#030817');
-  sky.addColorStop(0.34, '#101936');
-  sky.addColorStop(0.61, '#42224b');
-  sky.addColorStop(1, '#100d20');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = 'rgba(242,232,218,.76)';
-  ctx.beginPath();
-  ctx.arc(196, 92, 16, 0, Math.PI * 2);
-  ctx.fill();
-  for (let y = 206; y < 504; y += 18) {
-    for (let x = 8; x < 252; x += 16) {
-      const lit = ((x * 7 + y * 3) % 13) > 2;
-      ctx.fillStyle = lit ? ((x + y) % 5 ? '#ffd98a' : '#b9ddff') : '#111c34';
-      ctx.fillRect(x, y, 7, 8);
-    }
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-function createMarbleTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  const gradient = ctx.createLinearGradient(0, 0, 512, 512);
-  gradient.addColorStop(0, '#fffef9');
-  gradient.addColorStop(0.5, '#e8e7e2');
-  gradient.addColorStop(1, '#faf9f4');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 512, 512);
-  ctx.lineCap = 'round';
-  for (let index = 0; index < 18; index += 1) {
-    const y = 18 + index * 29;
-    ctx.beginPath();
-    ctx.moveTo(-30, y);
-    ctx.bezierCurveTo(120, y - 55, 260, y + 48, 542, y - 18);
-    ctx.strokeStyle = index % 3 === 0 ? 'rgba(183,164,136,0.24)' : 'rgba(115,132,146,0.13)';
-    ctx.lineWidth = index % 4 === 0 ? 3 : 1;
-    ctx.stroke();
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(5, 5);
-  return texture;
-}
-
 function createCommunityHall(scene) {
   const room = new THREE.Group();
   room.name = 'paka-community-kadi-hall';
@@ -306,167 +248,6 @@ function createCommunityHall(scene) {
   room.add(ceiling);
 
   scene.add(room);
-}
-
-// The approved gameplay composition deliberately keeps the room in shadow so
-// the table and real game state own the frame. This is a lightweight cinematic
-// enclosure for the live table, not a second game scene.
-function createGameplayBackdrop(scene) {
-  const group = new THREE.Group();
-  group.name = 'approved-gameplay-only-backdrop';
-  const marbleTexture = createMarbleTexture();
-  const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(17.5, 128),
-    new THREE.MeshPhysicalMaterial({
-      map: marbleTexture,
-      color: '#f4f1e8', roughness: 0.2, metalness: 0.04,
-      clearcoat: 0.72, clearcoatRoughness: 0.16,
-    })
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -1.38;
-  floor.receiveShadow = true;
-  group.add(floor);
-
-  const backWall = new THREE.Mesh(
-    new THREE.CylinderGeometry(14.8, 14.8, 10.5, 96, 1, true, Math.PI * 0.17, Math.PI * 0.66),
-    new THREE.MeshBasicMaterial({ color: '#061226', side: THREE.BackSide })
-  );
-  backWall.position.set(0, 3.6, -2.4);
-  backWall.rotation.y = Math.PI * 0.08;
-  group.add(backWall);
-
-  // High-contrast windows and distinct tower silhouettes keep the city legible
-  // behind the players instead of collapsing into a vague dark wall.
-  const cityTexture = createCityWindowTexture();
-  const cityMaterial = new THREE.MeshBasicMaterial({
-    map: cityTexture,
-    color: '#d6e7ff',
-    toneMapped: false,
-  });
-  for (let index = 0; index < 11; index += 1) {
-    const angle = -0.76 + index * 0.152;
-    const panel = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 7.7), cityMaterial);
-    panel.position.set(Math.sin(angle) * 13.1, 3.15, -Math.cos(angle) * 13.1);
-    panel.rotation.y = -angle;
-    group.add(panel);
-
-    const mullion = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 8.15, 0.12),
-      new THREE.MeshStandardMaterial({ color: '#9a6a22', metalness: 0.9, roughness: 0.22 })
-    );
-    mullion.position.set(Math.sin(angle - 0.073) * 12.98, 3.15, -Math.cos(angle - 0.073) * 12.98);
-    mullion.rotation.y = -angle;
-    group.add(mullion);
-  }
-
-  const towerMaterial = new THREE.MeshBasicMaterial({
-    map: cityTexture,
-    color: '#b9d3f5',
-    toneMapped: false,
-  });
-  [-10.6, -8.4, -5.9, -3.2, 3.4, 6.1, 8.7, 10.8].forEach((x, index) => {
-    const height = 5.4 + (index % 4) * 1.15;
-    const tower = new THREE.Mesh(new THREE.BoxGeometry(1.35 + (index % 2) * 0.38, height, 0.8), towerMaterial);
-    tower.position.set(x, -0.8 + height / 2, -11.3 - (index % 3) * 0.45);
-    tower.castShadow = false;
-    group.add(tower);
-  });
-
-  // A second row of nearer towers creates readable depth and recognizable
-  // building silhouettes instead of a single flat texture strip.
-  [-9.5, -6.9, -4.4, -1.8, 1.2, 4.2, 7.1, 9.7].forEach((x, index) => {
-    const height = 4.6 + ((index * 3) % 5) * 0.82;
-    const width = 1.05 + (index % 3) * 0.24;
-    const tower = new THREE.Mesh(new THREE.BoxGeometry(width, height, 1.05), towerMaterial);
-    tower.position.set(x, -0.9 + height / 2, -9.6 - (index % 2) * 0.35);
-    group.add(tower);
-    if (index % 2 === 0) {
-      const crown = new THREE.Mesh(
-        new THREE.ConeGeometry(width * 0.38, 0.9, 4),
-        new THREE.MeshBasicMaterial({ color: '#d9bb68', toneMapped: false })
-      );
-      crown.position.set(x, tower.position.y + height / 2 + 0.45, tower.position.z);
-      crown.rotation.y = Math.PI / 4;
-      group.add(crown);
-    }
-  });
-
-  // Gold floor inlays make the pale marble read as an intentional luxury floor.
-  [9.3, 12.8].forEach((radius) => {
-    const inlay = new THREE.Mesh(
-      new THREE.RingGeometry(radius, radius + 0.055, 128),
-      new THREE.MeshStandardMaterial({ color: '#c99632', metalness: 0.9, roughness: 0.2, side: THREE.DoubleSide })
-    );
-    inlay.rotation.x = -Math.PI / 2;
-    inlay.position.y = -1.365;
-    group.add(inlay);
-  });
-
-  [-7.1, 7.1].forEach((x) => {
-    const lamp = new THREE.PointLight('#ffbd6b', 5.5, 9.5, 2);
-    lamp.position.set(x, 2.8, -4.3);
-    group.add(lamp);
-  });
-
-  const tableHalo = new THREE.Mesh(
-    new THREE.RingGeometry(6.1, 8.8, 96),
-    new THREE.MeshBasicMaterial({
-      color: '#a56618', transparent: true, opacity: 0.055,
-      side: THREE.DoubleSide, depthWrite: false,
-    })
-  );
-  tableHalo.rotation.x = -Math.PI / 2;
-  tableHalo.position.y = -1.34;
-  group.add(tableHalo);
-  scene.add(group);
-}
-
-function createChandelier(scene) {
-  const group = new THREE.Group();
-  group.name = 'paka-crystal-chandelier';
-  const gold = new THREE.MeshStandardMaterial({ color: '#e0b94f', metalness: 0.95, roughness: 0.16 });
-  const crystal = new THREE.MeshPhysicalMaterial({ color: '#fff4cd', transmission: 0.78, transparent: true, opacity: 0.82, roughness: 0.04, clearcoat: 0.8 });
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 2.1, 18), gold);
-  stem.position.y = 8.1;
-  const crown = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 16), gold);
-  crown.scale.y = 0.48;
-  crown.position.y = 7.25;
-  group.add(stem, crown);
-  [[0.9, 6.95, 10], [1.62, 6.58, 18], [2.38, 6.15, 26]].forEach(([radius, height, count], ringIndex) => {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.075, 12, 72), gold);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = height;
-    group.add(ring);
-    for (let index = 0; index < count; index += 1) {
-      const angle = (index / count) * Math.PI * 2;
-      const strandLength = 0.45 + (index % 4) * 0.13 + ringIndex * 0.12;
-      const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, strandLength, 6), gold);
-      chain.position.set(Math.sin(angle) * radius, height - strandLength / 2, Math.cos(angle) * radius);
-      const drop = new THREE.Mesh(new THREE.OctahedronGeometry(0.12 + ringIndex * 0.018, 0), crystal);
-      drop.scale.y = 2.7;
-      drop.position.set(Math.sin(angle) * radius, height - strandLength - 0.19, Math.cos(angle) * radius);
-      group.add(chain, drop);
-      if (ringIndex === 2 && index % 3 === 0) {
-        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, radius * 0.84, 8), gold);
-        arm.position.set(Math.sin(angle) * radius * 0.46, height + 0.02, Math.cos(angle) * radius * 0.46);
-        arm.rotation.z = Math.PI / 2;
-        arm.rotation.y = angle;
-        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), new THREE.MeshBasicMaterial({ color: '#ffe2a3' }));
-        bulb.position.set(Math.sin(angle) * radius * 0.92, height + 0.13, Math.cos(angle) * radius * 0.92);
-        group.add(arm, bulb);
-      }
-    }
-  });
-  const crystalBowl = new THREE.Mesh(new THREE.SphereGeometry(0.82, 28, 16, 0, Math.PI * 2, Math.PI * 0.48, Math.PI * 0.45), crystal);
-  crystalBowl.position.y = 6.34;
-  group.add(crystalBowl);
-  scene.add(group);
-  const light = new THREE.PointLight('#ffd49a', 24, 18, 1.8);
-  light.position.set(0, 6.25, 0);
-  light.castShadow = true;
-  light.shadow.mapSize.set(1024, 1024);
-  scene.add(light);
 }
 
 function positionLimbBetween(mesh, start, end) {
@@ -1349,10 +1130,8 @@ export default function GameScene() {
     if (USE_PHOTOREAL_BACKGROUND) {
       // Lounge, table, seated guests and dealer are supplied by the approved
       // photographic environment; WebGL renders only live game objects.
-    } else if (USE_PENTHOUSE_PRESENTATION) {
-      createCommunityHall(scene);
     } else {
-      createGameplayBackdrop(scene);
+      createCommunityHall(scene);
     }
     if (!USE_PHOTOREAL_BACKGROUND) createTable(scene, null);
 
