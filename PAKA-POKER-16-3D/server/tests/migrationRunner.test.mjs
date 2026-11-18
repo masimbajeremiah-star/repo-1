@@ -36,7 +36,7 @@ test('migration failure rolls back, rejects, and never reports the failed file a
   assert.equal(queries.at(-1), 'ROLLBACK');
 });
 
-test('production migrations and repository agree on public.mpesa_transactions', async () => {
+test('legacy M-PESA migration remains historical while active repository has no deposit queries', async () => {
   const migrationUrl = new URL('../migrations/002_mpesa_transactions.sql', import.meta.url);
   const repositoryUrl = new URL('../src/services/repository.js', import.meta.url);
   const { readFile } = await import('node:fs/promises');
