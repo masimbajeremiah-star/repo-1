@@ -72,7 +72,7 @@ export default function App() {
           <aside className="free-play-notice" aria-label="Free game, no gambling">
             <strong>100% FREE TO PLAY</strong>
             <span>NOT A GAMBLING APP</span>
-            <small>No real-money betting · No wagering · No deposits · No cash prizes</small>
+            <small>No betting · No wagering · No cash prizes · No cash-out</small>
           </aside>
           <section className="quick-start" aria-label="Quick start">
             <h2>QUICK START</h2>
@@ -102,7 +102,7 @@ export default function App() {
                   <li>When you have one card left, call <strong>KADI!</strong> before the next player begins.</li>
                   <li>Play your final valid card to win the round.</li>
                 </ol>
-                <p>PAKA POWER 16 3D is for entertainment only. There is no real-money betting, wagering, deposits or cash prizes.</p>
+                <p>PAKA POWER 16 3D is for entertainment only. There is no betting, wagering, cash prizes or cash-out. No payment is required to play.</p>
                 <button type="button" onClick={() => setShowHowTo(false)}>GOT IT</button>
               </section>
             </div>
