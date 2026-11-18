@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import { randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import {
   addPlayer,
@@ -23,24 +24,18 @@ import {
 } from './tableManager.js';
 import { handleDemoCommand } from './demoController.js';
 
-const STARTING_CHIPS = 1000;
-const WIN_REWARD = 250;
-const PARTICIPATION_COST = 50;
 const reconnectTimers = new Map();
 let activeRepository = null;
 
-async function walletFor(playerId) { return activeRepository ? activeRepository.getWallet(playerId) : STARTING_CHIPS; }
-
-async function settleRound(state) {
-  if (!state.gameOver || !state.winnerId || state.settledWinnerId === state.winnerId) return;
+async function recordRoundResult(state) {
+  if (!state.gameOver || !state.winnerId || state.resultRecordedWinnerId === state.winnerId) return;
   const gameId = state.gameId || randomUUID();
   state.gameId = gameId;
   const participants = state.players.filter((player) => !player.demoBot).map((player) => player.id);
-  const changes = Object.fromEntries(participants.map((id) => [id, id === state.winnerId ? WIN_REWARD : -PARTICIPATION_COST]));
-  const balances = await activeRepository.settleGame({ gameId, winnerId: state.winnerId, participants, changes });
-  if (!balances) return;
-  for (const player of state.players) if (balances[player.id] !== undefined) player.chips = balances[player.id];
-  state.settledWinnerId = state.winnerId;
+  if (activeRepository?.recordGameResult) {
+    await activeRepository.recordGameResult({ gameId, winnerId: state.winnerId, participants });
+  }
+  state.resultRecordedWinnerId = state.winnerId;
 }
 
 function sanitizeState(state) {
@@ -48,7 +43,6 @@ function sanitizeState(state) {
     players: state.players.map((player) => ({
       id: player.id,
       name: player.name,
-      chips: player.chips,
       handCount: player.hand.length,
     })),
 
@@ -102,7 +96,6 @@ function emitTableState(io, table) {
     table.gameState.players.map((player) => ({
       id: player.id,
       name: player.name,
-      chips: player.chips,
       handCount: player.hand.length,
     }))
   );
@@ -225,13 +218,11 @@ async function joinTable(io, socket, table) {
   if (existingPlayer) {
     existingPlayer.socketId = socket.id;
     existingPlayer.name = playerName;
-    existingPlayer.chips = await walletFor(playerId);
   } else {
     addPlayer(table.gameState, {
       id: playerId,
       socketId: socket.id,
       name: playerName,
-      chips: await walletFor(playerId),
     });
   }
 
@@ -561,6 +552,7 @@ export function initPokerSocket(httpServer, { config, authService, repository })
       }
 
       checkForWinner(state);
+      await recordRoundResult(state);
       await settleRound(state);
 
       if (!state.gameOver && !state.suitSelectionPlayerId) {
