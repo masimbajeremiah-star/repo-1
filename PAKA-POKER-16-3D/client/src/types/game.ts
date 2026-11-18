@@ -4,7 +4,6 @@ import type { Card } from '../cards/Card';
 export type Player = {
   id: string;
   name: string;
-  chips: number;
   handCount?: number;
 };
 
